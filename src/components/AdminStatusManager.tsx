@@ -29,34 +29,39 @@ export default function AdminStatusManager({ item }: { item: any }) {
   };
 
   return (
-    <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--color-border)', fontSize: '0.8rem' }}>
-      <label style={{ display: 'block', marginBottom: '0.2rem', fontWeight: 600 }}>상태 변경</label>
-      <select 
-        value={status} 
-        onChange={(e) => setStatus(e.target.value)}
-        style={{ padding: '0.2rem', fontSize: '0.8rem', marginBottom: '0.5rem' }}
-      >
-        <option value="pending">대기</option>
-        <option value="revision">수정요청</option>
-        <option value="approved">기획안 통과</option>
-        <option value="completed">최종 검수 완료</option>
-      </select>
+    <div style={{ backgroundColor: '#f8fafc', padding: '0.6rem', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', whiteSpace: 'nowrap' }}>상태</span>
+        <select 
+          value={status} 
+          onChange={(e) => setStatus(e.target.value)}
+          style={{ flex: 1, padding: '0.2rem 0.4rem', fontSize: '0.75rem', height: '1.8rem', minWidth: '100px' }}
+        >
+          <option value="pending">대기</option>
+          <option value="revision">기정안 수정요청</option>
+          <option value="rejected">반려</option>
+          <option value="approved">기획안 통과</option>
+          <option value="final_submitted">완성본 제출됨</option>
+          <option value="final_revision">완성본 수정요청</option>
+          <option value="completed">업로드 대기</option>
+          <option value="uploaded">업로드 완료</option>
+        </select>
+      </div>
       
-      <label style={{ display: 'block', marginBottom: '0.2rem', fontWeight: 600 }}>피드백 코멘트</label>
       <textarea 
         value={comment} 
         onChange={(e) => setComment(e.target.value)} 
-        placeholder="피드백 작성..."
-        rows={2}
-        style={{ padding: '0.2rem', fontSize: '0.8rem', marginBottom: '0.5rem' }}
+        placeholder={(status === 'approved' || status === 'completed' || status === 'uploaded') ? '보충/참고 의견 입력...' : '수정 요청/반려 사유 입력...'}
+        rows={1}
+        style={{ padding: '0.4rem', fontSize: '0.75rem', width: '100%', minHeight: '3rem', resize: 'vertical' }}
       />
       
       <button 
         onClick={handleSave} 
         disabled={isSaving}
-        style={{ width: '100%', padding: '0.4rem', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+        style={{ width: '100%', padding: '0.3rem', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
       >
-        {isSaving ? '저장 중...' : '변경 사항 저장'}
+        {isSaving ? '저장...' : '저장하기'}
       </button>
     </div>
   );

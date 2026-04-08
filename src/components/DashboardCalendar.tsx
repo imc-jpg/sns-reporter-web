@@ -20,7 +20,7 @@ export default function DashboardCalendar({ contents }: { contents: any[] }) {
   const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
 
   // 현재 월의 시작까지의 빈 칸 채우기
-  const days = Array.from({ length: firstDay }, (_, i) => null).concat(
+  const days: Array<number | null> = Array.from({ length: firstDay }, () => null as number | null).concat(
     Array.from({ length: daysInMonth }, (_, i) => i + 1)
   );
 
@@ -34,7 +34,7 @@ export default function DashboardCalendar({ contents }: { contents: any[] }) {
     // YYYY-MM-DD 스트링 생성
     const targetDateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
-    return contents.filter(c => c.publish_date === targetDateStr);
+    return contents.filter(c => c.parsedPublishDate === targetDateStr);
   };
 
   return (
