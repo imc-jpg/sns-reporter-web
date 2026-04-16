@@ -11,7 +11,6 @@ type PageProps = {
 export default async function DashboardPage({ searchParams }: PageProps) {
   const resolvedParams = await searchParams;
   const isAdmin = resolvedParams?.admin === 'true';
-  const filterByMine = resolvedParams?.filter === 'mine';
 
   const supabase = await createClient();
   const { data: contents, error } = await supabase
@@ -30,6 +29,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     .single();
 
   const userName = user?.user_metadata?.full_name || user?.user_metadata?.name || null;
+  const realName = profile?.author_name || userName || null;
   const userGen = profile?.keywords || user?.user_metadata?.gen || '';
   const userNameToShow = profile ? `${userGen ? userGen + '기 ' : ''}${profile.author_name}` : (userName || userEmail?.split('@')[0] || '기자');
 
@@ -43,17 +43,26 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       let pDate = null;
       let emailInJson = '';
       let feedbackRead = false;
+      let crewString = '';
       if (item.content_body && item.content_body.startsWith('{')) {
         try {
           const pb = JSON.parse(item.content_body);
           pDate = pb.publishDate || null;
           emailInJson = pb.authorEmail || '';
           feedbackRead = pb.feedbackRead === true;
+          if (typeof pb.crew === 'string') {
+            crewString = pb.crew;
+          } else if (Array.isArray(pb.crew)) {
+            crewString = pb.crew.map((c: any) => c.name || '').join(',');
+          }
         } catch(e) {}
       }
-      const isMine = user && (emailInJson === userEmail || item.author_name === userEmail || item.author_name === userName || (userName && item.author_name?.includes(userName)));
+      
+      const isAuthor = user && (emailInJson === userEmail || item.author_name === userEmail || item.author_name === realName || (realName && item.author_name?.includes(realName)));
+      const isCrew = user && realName && crewString.includes(realName);
+      const isMine = isAuthor || isCrew;
 
-      return { ...item, parsedPublishDate: pDate, isMine, isRead: feedbackRead };
+      return { ...item, parsedPublishDate: pDate, isMine, isRead: feedbackRead, isAuthor, isCrew };
     }).filter(item => {
       const itemDate = new Date(new Date(item.created_at).toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
       return itemDate.getMonth() + 1 === currentMonth && itemDate.getFullYear() === currentYear;
@@ -69,10 +78,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const completedCount = myContents.filter(i => i.status === 'completed').length;
   const uploadedCount = myContents.filter(i => i.status === 'uploaded').length;
 
-  let displayContents = rawContents;
-  if (filterByMine && user) {
-    displayContents = myContents;
-  }
+  let displayContents = isAdmin ? rawContents : myContents;
   
   // 피드백이 있는 항목 (수정요청 상태이거나, 보충 의견이 있으면서 아직 읽음(Dismiss) 처리 안 한 경우)
   const feedbackItems = myContents.filter(i => {
@@ -137,35 +143,24 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             </p>
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div style={{ padding: '1rem', backgroundColor: '#fef3c7', borderRadius: '12px', textAlign: 'center', border: '1px solid #fde68a' }}>
-              <div style={{ fontSize: '0.8rem', color: '#d97706', fontWeight: 700, marginBottom: '0.4rem' }}>기획안 대기</div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#b45309' }}>{pendingCount}</div>
-            </div>
-            <div style={{ padding: '1rem', backgroundColor: '#fee2e2', borderRadius: '12px', textAlign: 'center', border: '1px solid #fecaca' }}>
-              <div style={{ fontSize: '0.8rem', color: '#dc2626', fontWeight: 700, marginBottom: '0.4rem' }}>기획안 수정</div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#b91c1c' }}>{revisionCount}</div>
-            </div>
-            <div style={{ padding: '1rem', backgroundColor: '#eff6ff', borderRadius: '12px', textAlign: 'center', border: '1px solid #bfdbfe' }}>
-              <div style={{ fontSize: '0.8rem', color: '#1d4ed8', fontWeight: 700, marginBottom: '0.4rem' }}>기획안 통과</div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#1e40af' }}>{approvedCount}</div>
-            </div>
-            <div style={{ padding: '1rem', backgroundColor: '#fffbeb', borderRadius: '12px', textAlign: 'center', border: '1px solid #fef3c7' }}>
-              <div style={{ fontSize: '0.8rem', color: '#d97706', fontWeight: 700, marginBottom: '0.4rem' }}>완성본 대기</div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#b45309' }}>{finalSubmittedCount}</div>
-            </div>
-            <div style={{ padding: '1rem', backgroundColor: '#fff1f2', borderRadius: '12px', textAlign: 'center', border: '1px solid #ffe4e6' }}>
-              <div style={{ fontSize: '0.8rem', color: '#e11d48', fontWeight: 700, marginBottom: '0.4rem' }}>완성본 수정</div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#be123c' }}>{finalRevisionCount}</div>
-            </div>
-            <div style={{ padding: '1rem', backgroundColor: '#e0f2fe', borderRadius: '12px', textAlign: 'center', border: '1px solid #bae6fd' }}>
-              <div style={{ fontSize: '0.8rem', color: '#0284c7', fontWeight: 700, marginBottom: '0.4rem' }}>업로드 대기</div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0369a1' }}>{completedCount}</div>
-            </div>
-            <div style={{ padding: '1rem', backgroundColor: '#dcfce7', borderRadius: '12px', textAlign: 'center', border: '1px solid #bbf7d0' }}>
-              <div style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: 700, marginBottom: '0.4rem' }}>업로드 완료</div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#15803d' }}>{uploadedCount}</div>
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
+            {[
+              { title: '기획안 대기', count: pendingCount, color: '#b45309', dot: '#fcd34d' },
+              { title: '기획안 수정', count: revisionCount, color: '#dc2626', dot: '#fca5a5' },
+              { title: '기획안 통과', count: approvedCount, color: '#1d4ed8', dot: '#93c5fd' },
+              { title: '완성본 대기', count: finalSubmittedCount, color: '#d97706', dot: '#fde047' },
+              { title: '완성본 수정', count: finalRevisionCount, color: '#be123c', dot: '#fda4af' },
+              { title: '업로드 대기', count: completedCount, color: '#0369a1', dot: '#7dd3fc' },
+              { title: '업로드 완료', count: uploadedCount, color: '#15803d', dot: '#86efac' }
+            ].map((stat, idx) => (
+              <div key={idx} style={{ padding: '1.2rem', backgroundColor: '#ffffff', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem' }}>
+                <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: stat.dot }}></span>
+                  {stat.title}
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: 800, color: stat.color, lineHeight: 1 }}>{stat.count}</div>
+              </div>
+            ))}
           </div>
         </>
       )}
@@ -177,31 +172,16 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
       <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
         <div style={{ flex: 3.5 }}>
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-            <Link 
-              href="/dashboard"
-              style={{ padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 600, backgroundColor: !filterByMine ? 'var(--color-primary)' : 'white', color: !filterByMine ? 'white' : 'var(--color-text-main)', border: '1px solid var(--color-border)', textDecoration: 'none' }}
-            >
-              전체 보기
-            </Link>
-            <Link 
-              href="/dashboard?filter=mine"
-              style={{ padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 600, backgroundColor: filterByMine ? 'var(--color-primary)' : 'white', color: filterByMine ? 'white' : 'var(--color-text-main)', border: '1px solid var(--color-border)', textDecoration: 'none' }}
-            >
-              내 기획안만 보기
-            </Link>
-          </div>
-
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: '#f9fafb' }}>
-                  <th style={{ padding: '1rem', fontWeight: 500, width: '13%' }}>등록일/상태</th>
-                  <th style={{ padding: '1rem', fontWeight: 500, width: '9%' }}>팀</th>
-                  <th style={{ padding: '1rem', fontWeight: 500, width: '10%' }}>종류</th>
-                  <th style={{ padding: '1rem', fontWeight: 500, width: '10%' }}>작성자</th>
-                  <th style={{ padding: '1rem', fontWeight: 500, width: isAdmin ? '32%' : '58%' }}>제목</th>
-                  {isAdmin && <th style={{ padding: '1rem', fontWeight: 500, width: '26%' }}>관리 (상태/피드백)</th>}
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.95rem' }}>
+              <thead style={{ borderBottom: '2px solid #e2e8f0' }}>
+                <tr>
+                  <th style={{ padding: '1.5rem 1rem', fontWeight: 600, color: '#64748b', fontSize: '0.85rem', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>등록일/상태</th>
+                  <th style={{ padding: '1.5rem 1rem', fontWeight: 600, color: '#64748b', fontSize: '0.85rem', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>분류</th>
+                  {isAdmin && <th style={{ padding: '1.5rem 1rem', fontWeight: 600, color: '#64748b', fontSize: '0.85rem', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>작성자</th>}
+                  <th style={{ padding: '1.5rem 1rem', fontWeight: 600, color: '#64748b', fontSize: '0.85rem', letterSpacing: '0.05em', width: isAdmin ? '25%' : '35%' }}>콘텐츠 제목</th>
+                  <th style={{ padding: '1.5rem 1rem', fontWeight: 600, color: '#64748b', fontSize: '0.85rem', letterSpacing: '0.05em', width: isAdmin ? '35%' : '45%' }}>피드백 / 코멘트</th>
+                  {isAdmin && <th style={{ padding: '1.5rem 1rem', fontWeight: 600, color: '#64748b', fontSize: '0.85rem', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>관리 옵션</th>}
                 </tr>
               </thead>
               <tbody>
@@ -210,7 +190,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                 )}
                 {displayContents.map(item => (
                   <tr key={item.id} style={{ borderBottom: '1px solid var(--color-border)', verticalAlign: 'top' }}>
-                    <td style={{ padding: '1rem' }}>
+                    <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
                       <div style={{ color: 'var(--color-text-muted)', marginBottom: '0.5rem', fontSize: '0.8rem' }}>
                         {new Date(item.created_at).toLocaleDateString()}
                       </div>
@@ -220,42 +200,51 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                           <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>-</span>
                       )}
                     </td>
-                    <td style={{ padding: '1rem' }}>
-                      {item.team ? (
-                        <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 8px', borderRadius: '4px', backgroundColor: getTeamColor(item.team).bg, color: getTeamColor(item.team).text, display: 'inline-block' }}>
-                          {item.team}
-                        </span>
-                      ) : <span style={{ color: '#ccc' }}>-</span>}
+                    <td style={{ padding: '1.25rem 1rem', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'flex-start' }}>
+                        {item.team ? (
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px', backgroundColor: getTeamColor(item.team).bg, color: getTeamColor(item.team).text }}>
+                            {item.team}
+                          </span>
+                        ) : null}
+                        {item.content_type ? (
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px', backgroundColor: getTypeColor(item.content_type).bg, color: getTypeColor(item.content_type).text }}>
+                            {item.content_type}
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
-                    <td style={{ padding: '1rem' }}>
-                      {item.content_type ? (
-                        <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 8px', borderRadius: '4px', backgroundColor: getTypeColor(item.content_type).bg, color: getTypeColor(item.content_type).text, display: 'inline-block' }}>
-                          {item.content_type}
-                        </span>
-                      ) : <span style={{ color: '#ccc' }}>-</span>}
-                    </td>
-                    <td style={{ padding: '1rem', fontWeight: 600 }}>{item.author_name}</td>
-                    <td style={{ padding: '1rem', fontWeight: 500 }}>
-                      <Link href={`/proposals/submit?id=${item.id}`} style={{ textDecoration: 'underline', color: 'var(--color-text-main)', display: 'block', marginBottom: '0.25rem' }}>
+                    {isAdmin && <td style={{ padding: '1.25rem 1rem', fontWeight: 600, whiteSpace: 'nowrap', color: '#334155' }}>{item.author_name}</td>}
+                    <td style={{ padding: '1.5rem 1rem', fontWeight: 500 }}>
+                      <Link href={`/proposals/submit?id=${item.id}`} className="hover-title-link" style={{ textDecoration: 'none', color: '#0f172a', fontWeight: 800, fontSize: '1.15rem', display: 'block', marginBottom: '0.75rem' }}>
                         {item.title}
                       </Link>
                       {item.parsedPublishDate && (
-                        <span style={{ fontSize: '0.75rem', backgroundColor: '#e0e7ff', color: 'var(--color-primary)', padding: '0.2rem 0.5rem', borderRadius: '4px', display: 'inline-block', marginBottom: '0.25rem' }}>
+                        <span style={{ fontSize: '0.8rem', backgroundColor: '#e0e7ff', color: 'var(--color-primary)', padding: '0.3rem 0.6rem', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', fontWeight: 600 }}>
                           📅 업로드 희망: {item.parsedPublishDate}
                         </span>
                       )}
-                      { (isAdmin || item.isMine) && item.feedback_comment && (
+                    </td>
+                    <td style={{ padding: '1.5rem 1rem', verticalAlign: 'top' }}>
+                      { (isAdmin || item.isMine) && item.feedback_comment ? (
                         <div style={{ 
-                            fontSize: '0.8rem', 
-                            color: (item.status === 'approved' || item.status === 'completed' || item.status === 'active') ? '#1e40af' : 'var(--status-revision)', 
-                            marginTop: '0.5rem', 
+                            fontSize: '0.95rem', 
+                            lineHeight: '1.5',
+                            color: (item.status === 'approved' || item.status === 'completed' || item.status === 'active') ? '#1e40af' : '#991b1b', 
                             backgroundColor: (item.status === 'approved' || item.status === 'completed' || item.status === 'active') ? '#eff6ff' : '#fef2f2', 
-                            padding: '0.5rem', 
-                            borderRadius: '4px',
-                            border: (item.status === 'approved' || item.status === 'completed' || item.status === 'active') ? '1px solid #bfdbfe' : 'none'
+                            padding: '1rem', 
+                            borderRadius: '12px',
+                            border: (item.status === 'approved' || item.status === 'completed' || item.status === 'active') ? '2px solid #bfdbfe' : '2px solid #fecaca',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'keep-all'
                           }}>
-                          💬 {(item.status === 'approved' || item.status === 'completed') ? '참고/보충 의견: ' : ''}{item.feedback_comment}
+                          <div style={{ fontWeight: 800, marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            💬 {(item.status === 'approved' || item.status === 'completed') ? '참고/보충 의견' : '🚧 수정 요청 사항'}
+                          </div>
+                          <div style={{ fontWeight: 500 }}>{item.feedback_comment}</div>
                         </div>
+                      ) : (
+                        <span style={{ color: '#cbd5e1', fontSize: '0.9rem', fontStyle: 'italic' }}>피드백 없음</span>
                       )}
                     </td>
                     {isAdmin && (

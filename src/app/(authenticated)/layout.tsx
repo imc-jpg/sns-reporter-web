@@ -19,7 +19,10 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const restoreProfile = async (currentUser: any) => {
-      if (!currentUser) return;
+      if (!currentUser) {
+        setIsCheckingProfile(false);
+        return;
+      }
       const metaTeam = currentUser.user_metadata?.team;
       const metaName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name;
       const localTeam = localStorage.getItem(`team_${currentUser.email}`);
@@ -109,22 +112,23 @@ export default function DashboardLayout({
         overflowY: 'auto'
       }}>
         
-        <div style={{ padding: '2rem 1.5rem' }}>
-          <h1 style={{ fontWeight: 800, color: 'var(--color-primary)', fontSize: '1.25rem', lineHeight: 1.3 }}>
-            연세대학교<br/>콘텐츠 검수 시스템
+        <div style={{ padding: '2rem 1.5rem 1rem 1.5rem' }}>
+          <img src="/yonsei_media_logo.png" alt="연세대학교 미디어센터" style={{ width: '100%', height: 'auto', marginBottom: '1rem', display: 'block', maxWidth: '180px' }} />
+          <h1 style={{ fontWeight: 800, color: 'var(--color-primary)', fontSize: '1.15rem', lineHeight: 1.35, letterSpacing: '-0.02em' }}>
+            연세대학교 SNS기자단<br/>기획안 시스템
           </h1>
         </div>
 
         <nav style={{ padding: '0 1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
           <div style={{ padding: '0 0.5rem 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 600, color: '#9ca3af', marginTop: '0.5rem' }}>MAIN</div>
           <Link href="/dashboard" style={getLinkStyle('/dashboard')}>
-            현황 보드
+            내 콘텐츠 현황
           </Link>
           <Link href="/proposals" style={getLinkStyle('/proposals')}>
-            기획안
+            전체 기획안
           </Link>
           <Link href="/final-works" style={getLinkStyle('/final-works')}>
-            완성본
+            전체 완성본
           </Link>
 
           <div style={{ padding: '0 0.5rem 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 600, color: '#9ca3af', marginTop: '1.5rem' }}>INFO</div>
@@ -199,8 +203,8 @@ export default function DashboardLayout({
 
       </aside>
 
-      <main style={{ flex: 1, padding: '2rem' }}>
-        <div className="container" style={{ padding: 0, maxWidth: '1200px', margin: '0 0 0 0' }}>
+      <main style={{ flex: 1, padding: '3rem 2.5rem', height: '100vh', overflowY: 'auto', backgroundColor: '#f8fafc' }}>
+        <div className="container" style={{ padding: 0, width: '100%', maxWidth: '1800px', margin: '0 auto' }}>
           {isCheckingProfile ? (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', color: 'var(--color-text-muted)' }}>
               사용자 접근 권한을 확인 중입니다...
