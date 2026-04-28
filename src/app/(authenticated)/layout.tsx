@@ -16,11 +16,14 @@ export default function DashboardLayout({
   const [user, setUser] = useState<any>(null);
   const [profileData, setProfileData] = useState<{name: string, team: string} | null>(null);
   const [isCheckingProfile, setIsCheckingProfile] = useState(true);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     const restoreProfile = async (currentUser: any) => {
       if (!currentUser) {
         setIsCheckingProfile(false);
+        setIsRedirecting(true); // new state
+        router.push('/login');
         return;
       }
       const metaTeam = currentUser.user_metadata?.team;
@@ -205,7 +208,11 @@ export default function DashboardLayout({
 
       <main style={{ flex: 1, padding: '3rem 2.5rem', height: '100vh', overflowY: 'auto', backgroundColor: '#f8fafc' }}>
         <div className="container" style={{ padding: 0, width: '100%', maxWidth: '1800px', margin: '0 auto' }}>
-          {isCheckingProfile ? (
+          {isRedirecting ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', color: 'var(--color-text-muted)', fontSize: '1.2rem', fontWeight: 600 }}>
+              로그인 화면으로 이동합니다...
+            </div>
+          ) : isCheckingProfile ? (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', color: 'var(--color-text-muted)' }}>
               사용자 접근 권한을 확인 중입니다...
             </div>

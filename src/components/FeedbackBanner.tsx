@@ -71,23 +71,23 @@ export default function FeedbackBanner({ initialItems }: { initialItems: any[] }
                  {!isApproved && (
                    <Link 
                      href={item.status === 'final_revision' ? `/final-works/submit?id=${item.id}` : `/proposals/submit?id=${item.id}`} 
-                     style={{ backgroundColor: '#ef4444', color: 'white', padding: '0.4rem 1rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.2)', transition: 'transform 0.1s' }}
+                     style={{ backgroundColor: '#ef4444', color: 'white', padding: '0.4rem 1.2rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.2)', transition: 'transform 0.1s' }}
                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                    >
-                     ✏️ 수정하러 가기
+                     수정
                    </Link>
                  )}
                  {isApproved && <span style={{ color: '#0369a1', fontSize: '0.8rem', fontWeight: 600 }}>확인 완료</span>}
                  
                  <button 
                   onClick={(e) => handleDismiss(item.id, e)}
-                  style={{ backgroundColor: '#f1f5f9', border: '1px solid #e2e8f0', color: '#64748b', padding: '0.4rem 0.8rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer', transition: 'all 0.1s' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#e2e8f0'; e.currentTarget.style.color = '#334155'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#64748b'; }}
+                  style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', fontSize: '1.25rem', fontWeight: 400, display: 'inline-flex', alignItems: 'center', cursor: 'pointer', transition: 'color 0.1s', padding: '0 0.2rem' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = '#94a3b8'; }}
                   title="알림 확인 및 숨기기"
                 >
-                  ✓ 확인(닫기)
+                  ✕
                 </button>
               </div>
             </div>
