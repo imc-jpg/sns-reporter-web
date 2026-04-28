@@ -284,12 +284,9 @@ function FinalSubmitForm() {
         <div style={{ position: 'absolute', bottom: '-20%', right: '15%', width: '200px', height: '200px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(20px)' }}></div>
         
         <div style={{ position: 'relative', zIndex: 1 }}>
-            <h2 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '0.6rem', letterSpacing: '-0.02em' }}>
-              {initialId ? (isReadOnly ? '✨ 완성본 상세보기' : '📝 완성본 텍스트/링크 수정') : '🎉 자랑스러운 최종 완성본 등록'}
+            <h2 style={{ fontSize: '2.2rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
+              {initialId ? (isReadOnly ? '완성본 상세보기' : '완성본 수정') : '완성본 등록'}
             </h2>
-            <p style={{ color: '#d1fae5', fontSize: '1rem', fontWeight: 500 }}>
-              {isReadOnly ? '드디어 세상에 나온 결과물입니다! 포스팅 내용을 확인해보세요.' : '고생하셨습니다! 결과물 링크와 포스팅 할 텍스트를 기입해주시면 배포됩니다.'}
-            </p>
         </div>
       </div>
 

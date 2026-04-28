@@ -82,9 +82,10 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   
   // 피드백이 있는 항목 (수정요청 상태이거나, 보충 의견이 있으면서 아직 읽음(Dismiss) 처리 안 한 경우)
   const feedbackItems = myContents.filter(i => {
+    if (i.isRead) return false;
     const hasComment = !!i.feedback_comment;
     const isRevision = i.status === 'revision' || i.status === 'final_revision';
-    const isApprovedWithComment = (i.status === 'approved' || i.status === 'completed') && hasComment && !i.isRead;
+    const isApprovedWithComment = (i.status === 'approved' || i.status === 'completed') && hasComment;
     return isRevision || isApprovedWithComment;
   });
 

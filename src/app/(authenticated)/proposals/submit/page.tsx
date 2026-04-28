@@ -272,12 +272,9 @@ function ProposalSubmitForm() {
         <div style={{ position: 'absolute', bottom: '-20%', right: '15%', width: '200px', height: '200px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(20px)' }}></div>
         
         <div style={{ position: 'relative', zIndex: 1 }}>
-            <h2 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '0.6rem', letterSpacing: '-0.02em' }}>
-              {idToEdit ? (formData.status === 'draft' ? '🚀 임시저장된 기획안 이어서 쓰기' : (isReadOnly ? '👀 제출된 기획안 상세보기' : '✏️ 기획안 다듬기 (수정)')) : '✨ 새로운 기획안의 시작'}
+            <h2 style={{ fontSize: '2.2rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
+              {idToEdit ? (formData.status === 'draft' ? '기획안 이어서 쓰기' : (isReadOnly ? '기획안 상세보기' : '기획안 수정')) : '기획안 작성'}
             </h2>
-            <p style={{ color: '#dbeafe', fontSize: '1rem', fontWeight: 500 }}>
-              {isReadOnly ? '멋진 기획안이 제출되었습니다. 진행 상황과 코멘트를 확인해보세요.' : '어떤 기발한 아이디어라도 좋아요. 여러분의 상상력을 마음껏 펼쳐주세요!'}
-            </p>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.8rem', zIndex: 1 }}>
