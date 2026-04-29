@@ -18,6 +18,12 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
 
+    // 숨겨진 관리자 접속 (백도어)
+    if (email === 'admin' && password === '0000') {
+      router.push('/dashboard?admin=true');
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -80,27 +86,7 @@ export default function LoginPage() {
             구글 계정으로 로그인 (Google)
           </button>
 
-          <Link
-            href="/dashboard?admin=true"
-            style={{ 
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              width: '100%',
-              padding: '0.75rem',
-              backgroundColor: '#1e293b',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontWeight: 600,
-              textDecoration: 'none',
-              marginBottom: '0.5rem'
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-            관리자 모드 접속 (로그인 없이)
-          </Link>
+
 
           <div style={{ display: 'flex', alignItems: 'center', margin: '0.5rem 0' }}>
             <hr style={{ flex: 1, borderColor: 'var(--color-border)' }} />
@@ -110,9 +96,9 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="flex-col gap-4">
             <div className="flex-col gap-2">
-              <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>이메일</label>
+              <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>이메일 또는 관리자 ID</label>
               <input 
-                type="email" 
+                type="text" 
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="example@yonsei.ac.kr"
