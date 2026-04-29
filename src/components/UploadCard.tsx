@@ -10,17 +10,19 @@ export default function UploadCard() {
     <div 
       style={{ 
         background: '#C0CFE4', /* 파란색 1.5단계 */
-        borderRadius: '16px', 
+        borderRadius: '24px', 
         padding: '2rem', 
         display: 'flex', 
         flexDirection: 'column', 
         alignItems: 'center', 
         justifyContent: 'center', 
-        minHeight: '240px',
+        width: '260px',
+        aspectRatio: '1 / 1',
         position: 'relative',
         overflow: 'hidden',
         cursor: isOpen ? 'default' : 'pointer',
-        transition: 'all 0.3s ease'
+        transition: 'all 0.3s ease',
+        boxShadow: '0 15px 35px -10px rgba(15, 23, 42, 0.05)'
       }}
       onClick={() => !isOpen && setIsOpen(true)}
     >

@@ -156,57 +156,66 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             </p>
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'auto 2fr 1fr', gap: '1.5rem', marginBottom: '2rem', alignItems: 'stretch' }}>
             {/* 1. 업로드 영역 (반응형 애니메이션 컴포넌트) */}
             <UploadCard />
 
             {/* 2. 승인 대기 중 */}
-            <div style={{ background: '#FDE38A', borderRadius: '16px', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-              <h3 style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: '1rem', color: '#B45309' }}>
+            <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+              <h3 style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: '1rem', color: '#1e293b' }}>
                 승인 대기 중 ({myContents.filter(i => ['pending', 'revision', 'final_submitted', 'final_revision'].includes(i.status)).length})
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', flex: 1, overflowY: 'auto', maxHeight: '180px', paddingRight: '0.5rem' }}>
                 {myContents.filter(i => ['pending', 'revision', 'final_submitted', 'final_revision'].includes(i.status))
                   .sort((a, b) => (b.status.includes('revision') ? 1 : 0) - (a.status.includes('revision') ? 1 : 0))
-                  .map(item => (
+                  .map(item => {
+                    const isRev = item.status.includes('revision');
+                    return (
                     <Link key={item.id} href={`/${item.status.includes('final') ? 'final-works' : 'proposals'}/submit?id=${item.id}`} style={{ textDecoration: 'none' }}>
                       <div style={{ 
-                        backgroundColor: item.status.includes('revision') ? '#FCA5A5' : '#FCD34D', 
-                        border: 'none', 
+                        backgroundColor: isRev ? '#FEF3C7' : '#F8FAFC', 
+                        border: isRev ? 'none' : '1px solid #E2E8F0', 
                         borderRadius: '999px', 
                         padding: '0.8rem 1.2rem', 
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', overflow: 'hidden' }}>
-                          <span style={{ fontSize: '0.75rem', padding: '6px 12px', borderRadius: '999px', backgroundColor: item.status.includes('revision') ? '#B91C1C' : '#F59E0B', color: 'white', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: '0.75rem', padding: '6px 12px', borderRadius: '999px', backgroundColor: isRev ? '#F59E0B' : '#F1F5F9', color: isRev ? 'white' : '#64748B', fontWeight: 700, whiteSpace: 'nowrap' }}>
                             {item.status.includes('final') ? '완성본' : '기획안'}
                           </span>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', overflow: 'hidden' }}>
                             <span style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</span>
-                            <span style={{ fontSize: '0.7rem', color: '#334155', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.content_type || '콘텐츠'} - {item.author_name || '이름 없음'}</span>
+                            <span style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.content_type || '콘텐츠'} - {item.author_name || '이름 없음'}</span>
                           </div>
                         </div>
-                        {item.status.includes('revision') ? 
-                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'white', color: '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.2rem', flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>!</div> 
-                          : <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>✏️</div>}
+                        {isRev ? 
+                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#FDE38A', color: '#B45309', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.2rem', flexShrink: 0 }}>!</div> 
+                          : <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'transparent', color: '#CBD5E1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>✏️</div>}
                       </div>
                     </Link>
-                  ))}
+                    );
+                  })}
               </div>
             </div>
 
             {/* 3. 승인 완료 */}
-            <div style={{ background: '#A7F3D0', borderRadius: '16px', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-              <h3 style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: '1rem', color: '#047857' }}>
+            <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+              <h3 style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: '1rem', color: '#1e293b' }}>
                 승인 완료 ({myContents.filter(i => ['approved', 'completed', 'uploaded'].includes(i.status)).length})
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', flex: 1, overflowY: 'auto', maxHeight: '180px', paddingRight: '0.5rem' }}>
                 {myContents.filter(i => ['approved', 'completed', 'uploaded'].includes(i.status))
-                  .map(item => (
+                  .map(item => {
+                    const isUp = item.status === 'uploaded';
+                    const isComp = item.status === 'completed';
+                    const cBg = isUp ? '#99B3D6' : isComp ? '#C0CFE4' : '#E6EBF2';
+                    const bBg = isUp ? '#002454' : isComp ? '#99B3D6' : '#FFFFFF';
+                    const bCol = isUp ? 'white' : isComp ? '#002454' : '#003378';
+                    return (
                     <Link key={item.id} href={`/${item.status === 'approved' ? 'final-works/submit?initialId' : 'final-works/submit?id'}=${item.id}`} style={{ textDecoration: 'none' }}>
                       <div style={{ 
-                        backgroundColor: item.status === 'uploaded' ? '#6EE7B7' : 'white', 
+                        backgroundColor: cBg, 
                         border: 'none',
                         borderRadius: '999px', 
                         padding: '0.8rem 1.2rem', 
@@ -216,8 +225,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', overflow: 'hidden' }}>
                           <span style={{ 
                             fontSize: '0.75rem', padding: '6px 12px', borderRadius: '999px', 
-                            backgroundColor: item.status === 'uploaded' ? '#047857' : '#D1FAE5', 
-                            color: item.status === 'uploaded' ? 'white' : '#047857', 
+                            backgroundColor: bBg, 
+                            color: bCol, 
                             fontWeight: 700, whiteSpace: 'nowrap' 
                           }}>
                             {item.team || '팀 없음'}
@@ -227,12 +236,13 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                             <span style={{ fontSize: '0.7rem', color: '#334155', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.content_type || '콘텐츠'} - {item.author_name || '이름 없음'}</span>
                           </div>
                         </div>
-                        <div style={{ fontSize: '0.8rem', backgroundColor: item.status === 'uploaded' ? '#047857' : '#D1FAE5', color: item.status === 'uploaded' ? 'white' : '#047857', padding: '6px 14px', borderRadius: '999px', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        <div style={{ fontSize: '0.8rem', backgroundColor: bBg, color: bCol, padding: '6px 14px', borderRadius: '999px', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
                           {item.parsedPublishDate || '미정'}
                         </div>
                       </div>
                     </Link>
-                  ))}
+                    );
+                  })}
               </div>
             </div>
           </div>
