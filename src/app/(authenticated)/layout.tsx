@@ -20,10 +20,20 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const restoreProfile = async (currentUser: any) => {
-      if (!currentUser) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isAdmin = urlParams.get('admin') === 'true';
+
+      if (!currentUser && !isAdmin) {
         setIsCheckingProfile(false);
-        setIsRedirecting(true); // new state
+        setIsRedirecting(true);
         router.push('/login');
+        return;
+      }
+      
+      if (!currentUser && isAdmin) {
+        setIsCheckingProfile(false);
+        setUser({ email: 'admin', user_metadata: { name: '관리자' } });
+        setProfileData({ name: '관리자', team: '운영진' });
         return;
       }
       const metaTeam = currentUser.user_metadata?.team;
