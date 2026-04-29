@@ -110,37 +110,41 @@ export default function DashboardLayout({
       borderRadius: '8px',
       fontSize: '0.95rem',
       fontWeight: isActive ? 600 : 500,
-      color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)',
-      backgroundColor: isActive ? 'var(--color-primary-light)' : 'transparent',
-      transition: 'background-color 0.2s, color 0.2s',
+      color: isActive ? '#001430' : 'rgba(255, 255, 255, 0.7)',
+      backgroundColor: isActive ? 'white' : 'transparent',
+      transition: 'all 0.2s',
       display: 'block',
       textDecoration: 'none'
     };
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--color-bg)' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f1f5f9' }}>
       <aside style={{ 
         width: '260px', 
-        backgroundColor: 'var(--color-surface)', 
-        borderRight: '1px solid var(--color-border)', 
+        backgroundColor: '#002454', 
+        borderRight: '1px solid #001430', 
         display: 'flex', 
         flexDirection: 'column',
         position: 'sticky',
         top: 0,
         height: '100vh',
-        overflowY: 'auto'
+        overflowY: 'auto',
+        color: 'white'
       }}>
         
         <div style={{ padding: '2rem 1.5rem 1rem 1.5rem' }}>
-          <img src="/yonsei_media_logo.png" alt="연세대학교 미디어센터" style={{ width: '100%', height: 'auto', marginBottom: '1rem', display: 'block', maxWidth: '180px' }} />
-          <h1 style={{ fontWeight: 800, color: 'var(--color-primary)', fontSize: '1.15rem', lineHeight: 1.35, letterSpacing: '-0.02em' }}>
-            연세대학교 SNS기자단<br/>기획안 시스템
+          {/* Logo with text */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+             <img src="/yonsei_media_logo.png" alt="연세대학교 미디어센터" style={{ width: '100%', height: 'auto', display: 'block', maxWidth: '180px', filter: 'brightness(0) invert(1)' }} />
+          </div>
+          <h1 style={{ fontWeight: 800, color: 'white', fontSize: '1rem', lineHeight: 1.35, letterSpacing: '-0.02em', opacity: 0.9 }}>
+            와이온 기획안 통합 시스템
           </h1>
         </div>
 
         <nav style={{ padding: '0 1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
-          <div style={{ padding: '0 0.5rem 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 600, color: '#9ca3af', marginTop: '0.5rem' }}>MAIN</div>
+          <div style={{ padding: '0 0.5rem 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginTop: '0.5rem' }}>MAIN</div>
           <Link href="/dashboard" style={getLinkStyle('/dashboard')}>
             내 콘텐츠 현황
           </Link>
@@ -151,7 +155,7 @@ export default function DashboardLayout({
             전체 완성본
           </Link>
 
-          <div style={{ padding: '0 0.5rem 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 600, color: '#9ca3af', marginTop: '1.5rem' }}>INFO</div>
+          <div style={{ padding: '0 0.5rem 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginTop: '1.5rem' }}>INFO</div>
           <Link href="/guidelines" style={getLinkStyle('/guidelines')}>
             콘텐츠 가이드라인
           </Link>
@@ -162,80 +166,91 @@ export default function DashboardLayout({
             자료실
           </Link>
 
-          <div style={{ padding: '0 0.5rem 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 600, color: '#9ca3af', marginTop: '1.5rem' }}>ADMIN</div>
+          <div style={{ padding: '0 0.5rem 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginTop: '1.5rem' }}>ADMIN</div>
           <Link href="/admin/users" style={getLinkStyle('/admin/users')}>
             👥 회원 명단 관리
           </Link>
         </nav>
 
-        <div style={{ padding: '1.5rem', borderTop: '1px solid var(--color-border)' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#9ca3af', marginBottom: '0.75rem' }}>테스트 모드 전환</div>
+        <div style={{ padding: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: '0.75rem' }}>테스트 모드 전환</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <Link 
               href="/dashboard?admin=true"
-              style={{ width: '100%', textAlign: 'center', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--color-primary)', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-primary)', backgroundColor: 'var(--color-primary-light)' }}
+              style={{ width: '100%', textAlign: 'center', padding: '0.5rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.2)', fontSize: '0.75rem', fontWeight: 600, color: 'white', backgroundColor: 'rgba(255,255,255,0.1)' }}
             >
               관리자 현황 뷰
             </Link>
             <Link 
               href="/dashboard"
-              style={{ width: '100%', textAlign: 'center', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--color-border)', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-main)' }}
+              style={{ width: '100%', textAlign: 'center', padding: '0.5rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.2)', fontSize: '0.75rem', fontWeight: 600, color: 'white' }}
             >
               일반 현황 뷰
             </Link>
           </div>
         </div>
-
-        <div style={{ padding: '1.5rem', borderTop: '1px solid var(--color-border)', backgroundColor: '#f9fafb', flexShrink: 0 }}>
-          {user ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-main)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>{profileData?.name || user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0]}님</span>
-                <Link href="/profile" style={{ fontSize: '0.75rem', color: 'var(--color-primary)', textDecoration: 'underline', fontWeight: 500 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle', marginRight: '2px' }}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                  설정
-                </Link>
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {user.email}
-              </div>
-              <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
-                <button 
-                  onClick={handleLogout}
-                  style={{ width: '100%', padding: '0.4rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, color: '#4b5563', backgroundColor: 'white', cursor: 'pointer' }}
-                >
-                  로그아웃
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>로그인이 필요합니다</div>
-              <Link 
-                href="/login"
-                style={{ display: 'block', padding: '0.4rem', border: '1px solid var(--color-primary)', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, color: 'white', backgroundColor: 'var(--color-primary)', textDecoration: 'none' }}
-              >
-                로그인 하러 가기
-              </Link>
-            </div>
-          )}
-        </div>
-
       </aside>
 
-      <main style={{ flex: 1, padding: '3rem 2.5rem', height: '100vh', overflowY: 'auto', backgroundColor: '#f8fafc' }}>
-        <div className="container" style={{ padding: 0, width: '100%', maxWidth: '1800px', margin: '0 auto' }}>
-          {isRedirecting ? (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', color: 'var(--color-text-muted)', fontSize: '1.2rem', fontWeight: 600 }}>
-              로그인 화면으로 이동합니다...
-            </div>
-          ) : isCheckingProfile ? (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', color: 'var(--color-text-muted)' }}>
-              사용자 접근 권한을 확인 중입니다...
-            </div>
-          ) : children}
-        </div>
-      </main>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <header style={{ height: '70px', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 2rem', position: 'sticky', top: 0, zIndex: 10 }}>
+          {/* Search Bar */}
+          <form 
+            onSubmit={(e) => { 
+              e.preventDefault(); 
+              const formData = new FormData(e.currentTarget);
+              const q = formData.get('q');
+              if (q) {
+                router.push(`/dashboard?q=${encodeURIComponent(q as string)}${window.location.search.includes('admin=true') ? '&admin=true' : ''}`);
+              } else {
+                router.push(`/dashboard${window.location.search.includes('admin=true') ? '?admin=true' : ''}`);
+              }
+            }}
+            style={{ display: 'flex', alignItems: 'center', backgroundColor: 'white', borderRadius: '8px', padding: '0.5rem 1rem', width: '360px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" name="q" placeholder="Search" defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('q') || '' : ''} style={{ border: 'none', backgroundColor: 'transparent', outline: 'none', marginLeft: '0.5rem', width: '100%', fontSize: '0.9rem', color: '#334155' }} />
+          </form>
+
+          {/* Profile */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            <button style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative', color: '#64748b' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+              <span style={{ position: 'absolute', top: '0', right: '0', width: '8px', height: '8px', backgroundColor: '#ef4444', borderRadius: '50%', border: '2px solid #f1f5f9' }}></span>
+            </button>
+            
+            {user ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1e293b' }}>
+                    {profileData?.name || user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0]} 님
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{user.email}</div>
+                </div>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', overflow: 'hidden' }}>
+                  <img src={user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${profileData?.name || 'User'}&background=random`} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                <button onClick={handleLogout} style={{ border: 'none', background: 'none', color: '#64748b', cursor: 'pointer', fontSize: '0.8rem', marginLeft: '0.5rem', textDecoration: 'underline' }}>로그아웃</button>
+              </div>
+            ) : (
+              <Link href="/login" style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1e293b' }}>로그인</Link>
+            )}
+          </div>
+        </header>
+
+        <main style={{ flex: 1, padding: '2rem', overflowY: 'auto', backgroundColor: '#f1f5f9' }}>
+          <div className="container" style={{ padding: 0, width: '100%', maxWidth: '1800px', margin: '0 auto' }}>
+            {isRedirecting ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', color: '#94a3b8', fontSize: '1.2rem', fontWeight: 600 }}>
+                로그인 화면으로 이동합니다...
+              </div>
+            ) : isCheckingProfile ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', color: '#94a3b8' }}>
+                사용자 접근 권한을 확인 중입니다...
+              </div>
+            ) : children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
