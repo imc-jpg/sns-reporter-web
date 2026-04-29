@@ -21,7 +21,13 @@ export default function DashboardLayout({
   useEffect(() => {
     const restoreProfile = async (currentUser: any) => {
       const urlParams = new URLSearchParams(window.location.search);
-      const isAdmin = urlParams.get('admin') === 'true';
+      let isAdmin = urlParams.get('admin') === 'true';
+
+      if (isAdmin) {
+        sessionStorage.setItem('isAdminBypass', 'true');
+      } else {
+        isAdmin = sessionStorage.getItem('isAdminBypass') === 'true';
+      }
 
       if (!currentUser && !isAdmin) {
         setIsCheckingProfile(false);
@@ -91,6 +97,7 @@ export default function DashboardLayout({
   }, [pathname, router, supabase]);
 
   const handleLogout = async () => {
+    sessionStorage.removeItem('isAdminBypass');
     await supabase.auth.signOut();
     setUser(null);
     router.push('/login');
