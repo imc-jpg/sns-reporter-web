@@ -22,13 +22,17 @@ export default function NotificationsPopup({ userEmail, userName }: { userEmail:
         const { data: allData } = await supabase
           .from('contents')
           .select('id, title, status, feedback_comment, updated_at, author_name, content_body')
-          .neq('feedback_comment', null)
-          .neq('feedback_comment', '')
           .neq('status', 'draft')
           .order('updated_at', { ascending: false });
 
         if (allData) {
-          const mine = allData.filter(item => {
+          // Only show items that actually have a feedback comment OR are in a revision state
+          const feedbackItems = allData.filter(item => 
+            (item.feedback_comment && item.feedback_comment.trim() !== '') || 
+            item.status.includes('revision')
+          );
+
+          const mine = feedbackItems.filter(item => {
             if (isAdmin) return true; // Show all for admins
 
             let emailInJson = '', crewString = '';
@@ -40,28 +44,13 @@ export default function NotificationsPopup({ userEmail, userName }: { userEmail:
                 else if (Array.isArray(pb.crew)) crewString = pb.crew.map((c: any) => c.name || '').join(',');
               } catch {}
             }
-            const cleanEmail = emailInJson.trim().toLowerCase();
-            const myEmail = (userEmail || '').trim().toLowerCase();
-            const isEmailMatch = myEmail && (cleanEmail === myEmail || item.author_name?.toLowerCase() === myEmail);
             
-            const cleanName = (userName || '').replace(/\s/g, '');
-            const cleanAuthor = (item.author_name || '').replace(/\s/g, '');
-            let isNameMatch = false;
-            if (cleanName && cleanAuthor) {
-              isNameMatch = cleanAuthor.includes(cleanName) || cleanName.includes(cleanAuthor);
-              if (!isNameMatch && cleanName.length >= 2 && cleanAuthor.length >= 2) {
-                // Check if they share at least 2 consecutive characters (e.g. 용준)
-                for (let i = 0; i < cleanName.length - 1; i++) {
-                  if (cleanAuthor.includes(cleanName.substring(i, i+2))) {
-                    isNameMatch = true;
-                    break;
-                  }
-                }
-              }
-            }
+            // 정확한 기술적 조건: 이메일이 일치하거나, 저자 이름이 정확히 일치하거나, 팀원에 포함되어 있는 경우
+            const isAuthorEmail = userEmail && emailInJson.trim() === userEmail;
+            const isAuthorName = userName && item.author_name === userName;
+            const isCrew = userName && crewString.includes(userName);
             
-            const isCrew = cleanName && crewString.replace(/\s/g, '').includes(cleanName);
-            return isEmailMatch || isNameMatch || isCrew;
+            return isAuthorEmail || isAuthorName || isCrew;
           });
           setNotifications(mine.slice(0, 15));
         }
