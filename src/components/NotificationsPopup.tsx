@@ -19,6 +19,15 @@ export default function NotificationsPopup({ userEmail, userName }: { userEmail:
     if (isOpen) {
       setLoading(true);
       const fetchFeedbacks = async () => {
+        // 실제 이름 가져오기 (대시보드와 동일한 로직)
+        let realName = userName;
+        if (userEmail) {
+          const { data: profile } = await supabase.from('contents').select('author_name').eq('title', `PROFILE_${userEmail}`).single();
+          if (profile?.author_name) {
+            realName = profile.author_name;
+          }
+        }
+
         const { data: allData } = await supabase
           .from('contents')
           .select('id, title, status, feedback_comment, updated_at, author_name, content_body')
@@ -26,14 +35,14 @@ export default function NotificationsPopup({ userEmail, userName }: { userEmail:
           .order('updated_at', { ascending: false });
 
         if (allData) {
-          // Only show items that actually have a feedback comment OR are in a revision state
+          // 피드백 코멘트가 있거나 수정 상태인 항목만 필터
           const feedbackItems = allData.filter(item => 
             (item.feedback_comment && item.feedback_comment.trim() !== '') || 
             item.status.includes('revision')
           );
 
           const mine = feedbackItems.filter(item => {
-            if (isAdmin) return true; // Show all for admins
+            if (isAdmin) return true;
 
             let emailInJson = '', crewString = '';
             if (item.content_body?.startsWith('{')) {
@@ -45,12 +54,15 @@ export default function NotificationsPopup({ userEmail, userName }: { userEmail:
               } catch {}
             }
             
-            // 정확한 기술적 조건: 이메일이 일치하거나, 저자 이름이 정확히 일치하거나, 팀원에 포함되어 있는 경우
-            const isAuthorEmail = userEmail && emailInJson.trim() === userEmail;
-            const isAuthorName = userName && item.author_name === userName;
-            const isCrew = userName && crewString.includes(userName);
+            // 대시보드와 완전히 동일한 비교 로직
+            const isMine = emailInJson === userEmail || 
+                           item.author_name === userEmail || 
+                           item.author_name === realName || 
+                           (realName && item.author_name?.includes(realName));
+                           
+            const isCrew = realName && crewString.includes(realName);
             
-            return isAuthorEmail || isAuthorName || isCrew;
+            return isMine || isCrew;
           });
           setNotifications(mine.slice(0, 15));
         }
