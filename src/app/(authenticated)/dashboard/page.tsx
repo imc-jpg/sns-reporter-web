@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
+import { supabaseAdmin } from "@/utils/supabase/admin";
 import Link from "next/link";
 import UploadCard from "@/components/UploadCard";
 import DashboardCalendar from "@/components/DashboardCalendar";
@@ -43,12 +44,12 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     .neq('status', 'draft')
     .order('created_at', { ascending: false });
 
-  // Deadlines
-  const { data: deadlineRow } = await supabase
+  // Deadlines — use admin client to bypass RLS for system records
+  const { data: deadlineRow } = await supabaseAdmin
     .from('contents')
     .select('content_body')
     .eq('title', 'SYSTEM_DEADLINES')
-    .single();
+    .maybeSingle();
 
   let deadlines: any = {};
   try { if (deadlineRow?.content_body) deadlines = JSON.parse(deadlineRow.content_body); } catch {}
