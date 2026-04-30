@@ -56,9 +56,10 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
   const calcDDay = (dateStr: string | null) => {
     if (!dateStr) return null;
-    const target = new Date(dateStr);
-    const today = new Date(currentDate.toDateString());
-    const diff = Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const [y, m, d] = dateStr.split('-');
+    const target = new Date(Number(y), Number(m) - 1, Number(d));
+    const today = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+    const diff = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     return diff;
   };
   const proposalDDay = calcDDay(deadlines.proposalDeadline);
