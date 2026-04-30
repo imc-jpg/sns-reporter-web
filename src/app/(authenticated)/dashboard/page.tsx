@@ -301,14 +301,14 @@ export default async function DashboardPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #E6EBF2' }}>
-                  {['색상', '날짜', '콘텐츠 종류', '콘텐츠 제목', '참여인원', '기획안', '완성본', '업로드 여부'].map(h => (
+                  {['색상', '날짜', '플랫폼', '콘텐츠 제목', '참여인원', '기획안 / 완성본 / 업로드'].map(h => (
                     <th key={h} style={{ padding: '0.85rem 0.75rem', fontWeight: 700, color: '#64748B', fontSize: '0.78rem', whiteSpace: 'nowrap', textAlign: 'left' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {myContents.length === 0 && (
-                  <tr><td colSpan={8} style={{ padding: '2rem', textAlign: 'center', color: '#CBD5E1' }}>콘텐츠가 없습니다</td></tr>
+                  <tr><td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#CBD5E1' }}>콘텐츠가 없습니다</td></tr>
                 )}
                 {myContents.map(item => {
                   const tc = getTeamColor(item.team || '');
@@ -342,23 +342,41 @@ export default async function DashboardPage() {
                       <td style={{ padding: '0.75rem', fontSize: '0.78rem', color: '#475569' }}>
                         {item.author_name || '-'}
                       </td>
-                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                        <span style={{ fontSize: '0.72rem', padding: '3px 8px', borderRadius: '999px', backgroundColor: ['pending','revision','approved'].includes(item.status) ? '#FEF3C7' : '#E6EBF2', color: '#003378', fontWeight: 700 }}>
-                          {item.status === 'revision' ? '수정요청' : item.status === 'approved' ? '통과' : '대기'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                        {['final_submitted','final_revision','completed','uploaded'].includes(item.status) ? (
-                          <span style={{ fontSize: '0.72rem', padding: '3px 8px', borderRadius: '999px', backgroundColor: '#E6EBF2', color: '#003378', fontWeight: 700 }}>
-                            {item.status === 'final_revision' ? '수정요청' : '제출됨'}
-                          </span>
-                        ) : <span style={{ color: '#CBD5E1' }}>-</span>}
-                      </td>
-                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                        {item.status === 'uploaded'
-                          ? <span style={{ fontSize: '0.72rem', padding: '3px 8px', borderRadius: '999px', backgroundColor: '#D1FAE5', color: '#047857', fontWeight: 700 }}>완료</span>
-                          : <span style={{ color: '#CBD5E1', fontSize: '0.8rem' }}>-</span>
-                        }
+                      <td style={{ padding: '0.75rem' }}>
+                        {/* 3단계 진행 체크박스: 기획안 통과 → 완성본 통과 → 게시 완료 */}
+                        {(() => {
+                          const s = item.status;
+                          const step1 = ['approved','final_submitted','final_revision','completed','uploaded'].includes(s);
+                          const step2 = ['completed','uploaded'].includes(s);
+                          const step3 = s === 'uploaded';
+                          const Check = ({ done, warn }: { done: boolean; warn?: boolean }) => (
+                            <div style={{
+                              width: '28px', height: '28px', borderRadius: '50%',
+                              backgroundColor: done ? '#10B981' : 'transparent',
+                              border: done ? 'none' : `2px solid ${warn ? '#F59E0B' : '#D1D5DB'}`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0,
+                            }}>
+                              {done && (
+                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                  <path d="M2.5 7L5.5 10L11.5 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              )}
+                            </div>
+                          );
+                          const Line = ({ active }: { active: boolean }) => (
+                            <div style={{ flex: 1, height: '2px', backgroundColor: active ? '#10B981' : '#E2E8F0', minWidth: '12px' }} />
+                          );
+                          return (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                              <Check done={step1} warn={s === 'revision'} />
+                              <Line active={step1 && step2} />
+                              <Check done={step2} warn={s === 'final_revision'} />
+                              <Line active={step2 && step3} />
+                              <Check done={step3} />
+                            </div>
+                          );
+                        })()}
                       </td>
                     </tr>
                   );
