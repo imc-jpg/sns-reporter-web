@@ -5,6 +5,7 @@ import UploadCard from "@/components/UploadCard";
 import DashboardCalendar from "@/components/DashboardCalendar";
 import AdminStatusManager from "@/components/AdminStatusManager";
 import MissingFinalWorksPopup from "@/components/MissingFinalWorksPopup";
+import PendingItem from "@/components/PendingItem";
 
 export const dynamic = 'force-dynamic';
 
@@ -171,34 +172,9 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             {waitingItems.length === 0 && (
               <div style={{ color: '#CBD5E1', fontSize: '0.9rem', textAlign: 'center', marginTop: '2rem' }}>대기 중인 항목이 없습니다</div>
             )}
-            {waitingItems.map(item => {
-              const isRev = item.status.includes('revision');
-              return (
-                <Link key={item.id} href={`/${item.status.includes('final') ? 'final-works' : 'proposals'}/submit?id=${item.id}`} style={{ textDecoration: 'none' }}>
-                  <div style={{
-                    backgroundColor: isRev ? '#FEF3C7' : '#F8FAFC',
-                    border: isRev ? 'none' : '1px solid #E2E8F0',
-                    borderRadius: '999px',
-                    padding: '0.65rem 1.1rem',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem',
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
-                      <span style={{ fontSize: '0.72rem', padding: '4px 10px', borderRadius: '999px', backgroundColor: isRev ? '#F59E0B' : '#F1F5F9', color: isRev ? 'white' : '#64748B', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
-                        {item.status.includes('final') ? '완성본' : '기획안'}
-                      </span>
-                      <div style={{ overflow: 'hidden' }}>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</div>
-                        <div style={{ fontSize: '0.7rem', color: '#94A3B8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.content_type} · {item.author_name}</div>
-                      </div>
-                    </div>
-                    {isRev
-                      ? <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#FDE38A', color: '#B45309', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1rem', flexShrink: 0 }}>!</div>
-                      : <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'transparent', color: '#CBD5E1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>✏️</div>
-                    }
-                  </div>
-                </Link>
-              );
-            })}
+            {waitingItems.map(item => (
+              <PendingItem key={item.id} item={item} />
+            ))}
           </div>
         </div>
 

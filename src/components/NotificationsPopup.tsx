@@ -8,29 +8,17 @@ export default function NotificationsPopup({ userEmail, userName }: { userEmail:
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
-    if (isOpen && userEmail) {
-      setLoading(true);
-      // Fetch recent feedbacks for this user
-      const fetchFeedbacks = async () => {
-        const { data } = await supabase
-          .from('contents')
-          .select('id, title, status, feedback_comment, updated_at')
-          .neq('feedback_comment', null)
-          .neq('feedback_comment', '')
-          .neq('status', 'draft')
-          .order('updated_at', { ascending: false })
-          .limit(10);
+    setIsAdmin(sessionStorage.getItem('isAdminBypass') === 'true');
+  }, [isOpen]);
 
-        // Filter manually since author checking is complex with crew/author_name formats
-        const myFeedbacks = (data || []).filter(item => {
-          // A very loose check for notifications
-          return true; // Wait, we should filter by ownership. But without a strict user_id, we can't easily.
-        });
-        
-        // Actually, let's fetch contents and filter like in dashboard
+  useEffect(() => {
+    if (isOpen) {
+      setLoading(true);
+      const fetchFeedbacks = async () => {
         const { data: allData } = await supabase
           .from('contents')
           .select('id, title, status, feedback_comment, updated_at, author_name, content_body')
@@ -41,6 +29,8 @@ export default function NotificationsPopup({ userEmail, userName }: { userEmail:
 
         if (allData) {
           const mine = allData.filter(item => {
+            if (isAdmin) return true; // Show all for admins
+
             let emailInJson = '', crewString = '';
             if (item.content_body?.startsWith('{')) {
               try {
@@ -50,17 +40,18 @@ export default function NotificationsPopup({ userEmail, userName }: { userEmail:
                 else if (Array.isArray(pb.crew)) crewString = pb.crew.map((c: any) => c.name || '').join(',');
               } catch {}
             }
-            const isAuthor = emailInJson === userEmail || item.author_name === userEmail || item.author_name === userName || (userName && item.author_name?.includes(userName));
+            const isAuthor = userEmail && (emailInJson === userEmail || item.author_name === userEmail);
+            const isNameMatch = userName && (item.author_name === userName || item.author_name?.includes(userName));
             const isCrew = userName && crewString.includes(userName);
-            return isAuthor || isCrew;
+            return isAuthor || isNameMatch || isCrew;
           });
-          setNotifications(mine.slice(0, 10));
+          setNotifications(mine.slice(0, 15));
         }
         setLoading(false);
       };
       fetchFeedbacks();
     }
-  }, [isOpen, userEmail, userName, supabase]);
+  }, [isOpen, userEmail, userName, supabase, isAdmin]);
 
   return (
     <div style={{ position: 'relative' }}>
