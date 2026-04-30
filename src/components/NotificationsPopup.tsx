@@ -18,59 +18,27 @@ export default function NotificationsPopup({ userEmail, userName }: { userEmail:
   useEffect(() => {
     if (isOpen) {
       setLoading(true);
-      const fetchFeedbacks = async () => {
-        // 실제 이름 가져오기 (대시보드와 동일한 로직)
-        let realName = userName;
-        if (userEmail) {
-          const { data: profile } = await supabase.from('contents').select('author_name').eq('title', `PROFILE_${userEmail}`).single();
-          if (profile?.author_name) {
-            realName = profile.author_name;
+        try {
+          // 캐싱 방지를 위해 timestamp 추가
+          const res = await fetch(`/api/notifications?t=${new Date().getTime()}`);
+          if (res.ok) {
+            const data = await res.json();
+            
+            // 관리자 모드일 경우: 자신이 참여한 것은 이미 포함되어 있고, 만약 어드민 권한으로 더 보고 싶다면 
+            // 여기서 API 파라미터로 처리할 수 있으나, 유저 요청에 따라 '내가 포함/작성한 것'만 띄우도록 합니다.
+            setNotifications(data.notifications || []);
+          } else {
+            setNotifications([]);
           }
-        }
-
-        const { data: allData } = await supabase
-          .from('contents')
-          .select('id, title, status, feedback_comment, updated_at, author_name, content_body')
-          .neq('status', 'draft')
-          .order('updated_at', { ascending: false });
-
-        if (allData) {
-          // 피드백 코멘트가 있거나 수정 상태인 항목만 필터
-          const feedbackItems = allData.filter(item => 
-            (item.feedback_comment && item.feedback_comment.trim() !== '') || 
-            item.status.includes('revision')
-          );
-
-          const mine = feedbackItems.filter(item => {
-            if (isAdmin) return true;
-
-            let emailInJson = '', crewString = '';
-            if (item.content_body?.startsWith('{')) {
-              try {
-                const pb = JSON.parse(item.content_body);
-                emailInJson = pb.authorEmail || '';
-                if (typeof pb.crew === 'string') crewString = pb.crew;
-                else if (Array.isArray(pb.crew)) crewString = pb.crew.map((c: any) => c.name || '').join(',');
-              } catch {}
-            }
-            
-            // 대시보드와 완전히 동일한 비교 로직
-            const isMine = emailInJson === userEmail || 
-                           item.author_name === userEmail || 
-                           item.author_name === realName || 
-                           (realName && item.author_name?.includes(realName));
-                           
-            const isCrew = realName && crewString.includes(realName);
-            
-            return isMine || isCrew;
-          });
-          setNotifications(mine.slice(0, 15));
+        } catch (error) {
+          console.error("Failed to fetch notifications", error);
+          setNotifications([]);
         }
         setLoading(false);
       };
       fetchFeedbacks();
     }
-  }, [isOpen, userEmail, userName, supabase, isAdmin]);
+  }, [isOpen]);
 
   return (
     <div style={{ position: 'relative' }}>
