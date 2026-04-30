@@ -2,8 +2,18 @@ import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import UploadCard from "@/components/UploadCard";
 import DashboardCalendar from "@/components/DashboardCalendar";
+import AdminStatusManager from "@/components/AdminStatusManager";
 
-export default async function DashboardPage() {
+export const dynamic = 'force-dynamic';
+
+type PageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export default async function DashboardPage({ searchParams }: PageProps) {
+  const resolvedParams = await searchParams;
+  const isAdmin = resolvedParams?.admin === 'true';
+  const searchQuery = typeof resolvedParams?.q === 'string' ? resolvedParams.q : '';
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const userEmail = user?.email || null;
@@ -71,6 +81,18 @@ export default async function DashboardPage() {
   });
 
   const myContents = rawContents.filter(i => i.isMine);
+
+  // 관리자 뷰용 (전체 콘텐츠)
+  let displayContents = isAdmin ? rawContents : myContents;
+  if (searchQuery) {
+    const qLower = searchQuery.toLowerCase();
+    displayContents = displayContents.filter(item =>
+      item.title?.toLowerCase().includes(qLower) ||
+      item.author_name?.toLowerCase().includes(qLower) ||
+      item.team?.toLowerCase().includes(qLower) ||
+      item.content_type?.toLowerCase().includes(qLower)
+    );
+  }
 
   // 미제출 완성본: 기획안 통과 (approved) 상태인 항목
   const pendingFinalCount = myContents.filter(i => i.status === 'approved').length;
@@ -386,6 +408,105 @@ export default async function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* ── 관리자 패널: 상태 관리 및 피드백 ── */}
+      {isAdmin && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem', gap: '0.75rem' }}>
+            <h3 style={{ fontWeight: 800, fontSize: '1rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ background: 'var(--color-primary)', color: 'white', borderRadius: '6px', padding: '2px 10px', fontSize: '0.78rem' }}>관리자</span>
+              기획안 상태 관리 ({displayContents.length}건)
+            </h3>
+          </div>
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #E6EBF2', backgroundColor: '#F8FAFC' }}>
+                  {['등록일/상태', '팀/종류', '작성자', '콘텐츠 제목', '피드백', '상태 관리'].map(h => (
+                    <th key={h} style={{ padding: '0.85rem 0.75rem', fontWeight: 700, color: '#64748B', fontSize: '0.78rem', whiteSpace: 'nowrap', textAlign: 'left' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {displayContents.length === 0 && (
+                  <tr><td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#CBD5E1' }}>콘텐츠가 없습니다</td></tr>
+                )}
+                {displayContents.map(item => {
+                  const tc = getTeamColor(item.team || '');
+                  const tyc = getTypeColor(item.content_type || '');
+                  const statusColors: Record<string, { bg: string; text: string }> = {
+                    draft: { bg: '#e5e7eb', text: '#4b5563' },
+                    pending: { bg: '#FEF3C7', text: '#B45309' },
+                    revision: { bg: '#FEE2E2', text: '#B91C1C' },
+                    rejected: { bg: '#e5e7eb', text: '#4b5563' },
+                    approved: { bg: '#D1FAE5', text: '#047857' },
+                    final_submitted: { bg: '#DBEAFE', text: '#1D4ED8' },
+                    final_revision: { bg: '#FEE2E2', text: '#B91C1C' },
+                    completed: { bg: '#E6EBF2', text: '#003378' },
+                    uploaded: { bg: '#D1FAE5', text: '#047857' },
+                  };
+                  const sc = statusColors[item.status] || { bg: '#f3f4f6', text: '#6b7280' };
+                  const statusLabel: Record<string, string> = {
+                    draft: '임시저장', pending: '대기', revision: '기획안 수정요청', rejected: '반려',
+                    approved: '기획안 통과', final_submitted: '완성본 제출', final_revision: '완성본 수정요청',
+                    completed: '업로드 대기', uploaded: '업로드 완료'
+                  };
+                  return (
+                    <tr key={item.id} style={{ borderBottom: '1px solid #F1F5F9', verticalAlign: 'top' }}>
+                      <td style={{ padding: '0.85rem 0.75rem', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginBottom: '0.35rem' }}>
+                          {new Date(item.created_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
+                        </div>
+                        <span style={{ fontSize: '0.72rem', padding: '3px 8px', borderRadius: '999px', backgroundColor: sc.bg, color: sc.text, fontWeight: 700 }}>
+                          {statusLabel[item.status] || item.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.85rem 0.75rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          {item.team && <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: tc.bg, color: tc.text, display: 'inline-block' }}>{item.team}</span>}
+                          {item.content_type && <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: tyc.bg, color: tyc.text, display: 'inline-block' }}>{item.content_type}</span>}
+                        </div>
+                      </td>
+                      <td style={{ padding: '0.85rem 0.75rem', fontWeight: 600, whiteSpace: 'nowrap', color: '#334155', fontSize: '0.85rem' }}>
+                        {item.author_name}
+                      </td>
+                      <td style={{ padding: '0.85rem 0.75rem' }}>
+                        <Link href={`/proposals/submit?id=${item.id}`} style={{ textDecoration: 'none', color: '#0f172a', fontWeight: 800, fontSize: '0.95rem', display: 'block', marginBottom: '0.3rem' }}>
+                          {item.title}
+                        </Link>
+                        {item.parsedPublishDate && (
+                          <span style={{ fontSize: '0.75rem', backgroundColor: '#e0e7ff', color: 'var(--color-primary)', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                            📅 {item.parsedPublishDate}
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '0.85rem 0.75rem', maxWidth: '220px' }}>
+                        {item.feedback_comment ? (
+                          <div style={{
+                            fontSize: '0.82rem', lineHeight: 1.5,
+                            color: ['approved','completed','uploaded'].includes(item.status) ? '#1e40af' : '#991b1b',
+                            backgroundColor: ['approved','completed','uploaded'].includes(item.status) ? '#eff6ff' : '#fef2f2',
+                            padding: '0.6rem 0.8rem', borderRadius: '8px',
+                            border: ['approved','completed','uploaded'].includes(item.status) ? '1px solid #bfdbfe' : '1px solid #fecaca',
+                            whiteSpace: 'pre-wrap', wordBreak: 'keep-all'
+                          }}>
+                            💬 {item.feedback_comment}
+                          </div>
+                        ) : (
+                          <span style={{ color: '#cbd5e1', fontSize: '0.82rem', fontStyle: 'italic' }}>피드백 없음</span>
+                        )}
+                      </td>
+                      <td style={{ padding: '0.85rem 0.75rem', minWidth: '180px' }}>
+                        <AdminStatusManager item={item} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

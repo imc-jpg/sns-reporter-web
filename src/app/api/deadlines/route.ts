@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-
-// Deadlines are stored as a special system record in the contents table
-// title: 'SYSTEM_DEADLINES', content_body: JSON { proposalDeadline, finalDeadline, proposalDDayLabel, finalDDayLabel }
+import { revalidatePath } from 'next/cache';
 
 const SYSTEM_TITLE = 'SYSTEM_DEADLINES';
 
@@ -15,7 +13,7 @@ export async function GET() {
     .single();
 
   if (!data?.content_body) {
-    return NextResponse.json({ proposalDeadline: null, finalDeadline: null, label: null, finalLabel: null });
+    return NextResponse.json({ proposalDeadline: null, finalDeadline: null, proposalLabel: null, finalLabel: null });
   }
   try {
     return NextResponse.json(JSON.parse(data.content_body));
@@ -41,8 +39,16 @@ export async function POST(req: NextRequest) {
   if (existing) {
     await supabase.from('contents').update({ content_body: contentBody }).eq('title', SYSTEM_TITLE);
   } else {
-    await supabase.from('contents').insert({ title: SYSTEM_TITLE, content_type: 'SYSTEM_DEADLINES', content_body: contentBody, status: 'active' });
+    await supabase.from('contents').insert({
+      title: SYSTEM_TITLE,
+      content_type: 'SYSTEM_DEADLINES',
+      content_body: contentBody,
+      status: 'active'
+    });
   }
+
+  // 대시보드 캐시 무효화 → 저장 즉시 반영
+  revalidatePath('/dashboard');
 
   return NextResponse.json({ ok: true });
 }
