@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
+import NotificationsPopup from "@/components/NotificationsPopup";
 
 export default function DashboardLayout({
   children,
@@ -17,6 +18,7 @@ export default function DashboardLayout({
   const [profileData, setProfileData] = useState<{name: string, team: string} | null>(null);
   const [isCheckingProfile, setIsCheckingProfile] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
     const restoreProfile = async (currentUser: any) => {
@@ -120,18 +122,20 @@ export default function DashboardLayout({
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f1f5f9' }}>
-      <aside style={{ 
-        width: '260px', 
-        backgroundColor: '#002454', 
-        borderRight: '1px solid #001430', 
-        display: 'flex', 
-        flexDirection: 'column',
-        position: 'sticky',
-        top: 0,
-        height: '100vh',
-        overflowY: 'auto',
-        color: 'white'
-      }}>
+      {isSidebarOpen && (
+        <aside style={{ 
+          width: '260px', 
+          backgroundColor: '#002454', 
+          borderRight: '1px solid #001430', 
+          display: 'flex', 
+          flexDirection: 'column',
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+          overflowY: 'auto',
+          color: 'white',
+          flexShrink: 0
+        }}>
         
         <div style={{ padding: '2rem 1.5rem 1rem 1.5rem' }}>
           {/* Logo with text */}
@@ -191,47 +195,55 @@ export default function DashboardLayout({
               일반 현황 뷰
             </Link>
           </div>
-        </div>
-      </aside>
+          </div>
+        </aside>
+      )}
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <header style={{ height: '70px', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 2rem', position: 'sticky', top: 0, zIndex: 10 }}>
-          {/* Search Bar */}
-          <form 
-            onSubmit={(e) => { 
-              e.preventDefault(); 
-              const formData = new FormData(e.currentTarget);
-              const q = formData.get('q');
-              if (q) {
-                router.push(`/dashboard?q=${encodeURIComponent(q as string)}${window.location.search.includes('admin=true') ? '&admin=true' : ''}`);
-              } else {
-                router.push(`/dashboard${window.location.search.includes('admin=true') ? '?admin=true' : ''}`);
-              }
-            }}
-            style={{ display: 'flex', alignItems: 'center', backgroundColor: 'white', borderRadius: '8px', padding: '0.5rem 1rem', width: '360px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" name="q" placeholder="Search" defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('q') || '' : ''} style={{ border: 'none', backgroundColor: 'transparent', outline: 'none', marginLeft: '0.5rem', width: '100%', fontSize: '0.9rem', color: '#334155' }} />
-          </form>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+            {/* Sidebar Toggle */}
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+
+            {/* Search Bar */}
+            <form 
+              onSubmit={(e) => { 
+                e.preventDefault(); 
+                const formData = new FormData(e.currentTarget);
+                const q = formData.get('q');
+                if (q) {
+                  router.push(`/search?q=${encodeURIComponent(q as string)}${window.location.search.includes('admin=true') ? '&admin=true' : ''}`);
+                } else {
+                  router.push(`/search${window.location.search.includes('admin=true') ? '?admin=true' : ''}`);
+                }
+              }}
+              style={{ display: 'flex', alignItems: 'center', backgroundColor: 'white', borderRadius: '8px', padding: '0.5rem 1rem', width: '360px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" name="q" placeholder="Search" autoComplete="off" defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('q') || '' : ''} style={{ border: 'none', backgroundColor: 'transparent', outline: 'none', marginLeft: '0.5rem', width: '100%', fontSize: '0.9rem', color: '#334155' }} />
+            </form>
+          </div>
 
           {/* Profile */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-            <button style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative', color: '#64748b' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-              <span style={{ position: 'absolute', top: '0', right: '0', width: '8px', height: '8px', backgroundColor: '#ef4444', borderRadius: '50%', border: '2px solid #f1f5f9' }}></span>
-            </button>
+            <NotificationsPopup userEmail={user?.email || null} userName={profileData?.name || user?.user_metadata?.name || null} />
             
             {user ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1e293b' }}>
-                    {profileData?.name || user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0]} 님
+                <Link href="/profile" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', textDecoration: 'none', color: 'inherit' }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1e293b' }}>
+                      {profileData?.name || user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0]} 님
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{user.email}</div>
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{user.email}</div>
-                </div>
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', overflow: 'hidden' }}>
-                  <img src={user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${profileData?.name || 'User'}&background=random`} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                </div>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', overflow: 'hidden' }}>
+                    <img src={user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${profileData?.name || 'User'}&background=random`} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                </Link>
                 <button onClick={handleLogout} style={{ border: 'none', background: 'none', color: '#64748b', cursor: 'pointer', fontSize: '0.8rem', marginLeft: '0.5rem', textDecoration: 'underline' }}>로그아웃</button>
               </div>
             ) : (
