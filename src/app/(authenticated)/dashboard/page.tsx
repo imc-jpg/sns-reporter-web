@@ -1,30 +1,13 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
-import AdminStatusManager from "@/components/AdminStatusManager";
-import DashboardCalendar from "@/components/DashboardCalendar";
-import FeedbackBanner from "@/components/FeedbackBanner";
 import UploadCard from "@/components/UploadCard";
+import DashboardCalendar from "@/components/DashboardCalendar";
 
-type PageProps = {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-};
-
-export default async function DashboardPage({ searchParams }: PageProps) {
-  const resolvedParams = await searchParams;
-  const isAdmin = resolvedParams?.admin === 'true';
-  const searchQuery = typeof resolvedParams?.q === 'string' ? resolvedParams.q : '';
-
+export default async function DashboardPage() {
   const supabase = await createClient();
-  const { data: contents, error } = await supabase
-    .from('contents')
-    .select('*')
-    .neq('content_type', 'SYSTEM_PROFILE')
-    .order('created_at', { ascending: false });
-
   const { data: { user } } = await supabase.auth.getUser();
   const userEmail = user?.email || null;
-  
-  // 프로필 정보 가져오기 (커스텀 이름 사용을 위해)
+
   const { data: profile } = await supabase.from('contents')
     .select('author_name, keywords')
     .eq('title', `PROFILE_${userEmail}`)
@@ -32,320 +15,357 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
   const userName = user?.user_metadata?.full_name || user?.user_metadata?.name || null;
   const realName = profile?.author_name || userName || null;
-  const userGen = profile?.keywords || user?.user_metadata?.gen || '';
-  const userNameToShow = profile ? `${userGen ? userGen + '기 ' : ''}${profile.author_name}` : (userName || userEmail?.split('@')[0] || '기자');
+  const userGen = profile?.keywords || '';
+  const userNameToShow = profile
+    ? `${userGen ? userGen + '기 ' : ''}${profile.author_name}`
+    : (userName || userEmail?.split('@')[0] || '기자');
 
-  const currentDate = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
+  const currentDate = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
   const currentMonth = currentDate.getMonth() + 1;
   const currentYear = currentDate.getFullYear();
 
-  const rawContents = (contents || [])
-    .filter(item => item.status !== 'draft') // Filter out drafts from dashboard
-    .map(item => {
-      let pDate = null;
-      let emailInJson = '';
-      let feedbackRead = false;
-      let crewString = '';
-      if (item.content_body && item.content_body.startsWith('{')) {
-        try {
-          const pb = JSON.parse(item.content_body);
-          pDate = pb.publishDate || null;
-          emailInJson = pb.authorEmail || '';
-          feedbackRead = pb.feedbackRead === true;
-          if (typeof pb.crew === 'string') {
-            crewString = pb.crew;
-          } else if (Array.isArray(pb.crew)) {
-            crewString = pb.crew.map((c: any) => c.name || '').join(',');
-          }
-        } catch(e) {}
-      }
-      
-      const isAuthor = user && (emailInJson === userEmail || item.author_name === userEmail || item.author_name === realName || (realName && item.author_name?.includes(realName)));
-      const isCrew = user && realName && crewString.includes(realName);
-      const isMine = isAuthor || isCrew;
+  // All contents
+  const { data: contents } = await supabase
+    .from('contents')
+    .select('*')
+    .neq('content_type', 'SYSTEM_PROFILE')
+    .neq('title', 'SYSTEM_DEADLINES')
+    .neq('status', 'draft')
+    .order('created_at', { ascending: false });
 
-      return { ...item, parsedPublishDate: pDate, isMine, isRead: feedbackRead, isAuthor, isCrew };
-    }).filter(item => {
-      const itemDate = new Date(new Date(item.created_at).toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
-      return itemDate.getMonth() + 1 === currentMonth && itemDate.getFullYear() === currentYear;
-    });
+  // Deadlines
+  const { data: deadlineRow } = await supabase
+    .from('contents')
+    .select('content_body')
+    .eq('title', 'SYSTEM_DEADLINES')
+    .single();
 
-  const myContents = rawContents.filter(item => item.isMine);
+  let deadlines: any = {};
+  try { if (deadlineRow?.content_body) deadlines = JSON.parse(deadlineRow.content_body); } catch {}
 
-  const pendingCount = myContents.filter(i => i.status === 'pending').length;
-  const revisionCount = myContents.filter(i => i.status === 'revision').length;
-  const approvedCount = myContents.filter(i => i.status === 'approved').length;
-  const finalSubmittedCount = myContents.filter(i => i.status === 'final_submitted').length;
-  const finalRevisionCount = myContents.filter(i => i.status === 'final_revision').length;
-  const completedCount = myContents.filter(i => i.status === 'completed').length;
-  const uploadedCount = myContents.filter(i => i.status === 'uploaded').length;
+  const calcDDay = (dateStr: string | null) => {
+    if (!dateStr) return null;
+    const target = new Date(dateStr);
+    const today = new Date(currentDate.toDateString());
+    const diff = Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return diff;
+  };
+  const proposalDDay = calcDDay(deadlines.proposalDeadline);
+  const finalDDay = calcDDay(deadlines.finalDeadline);
 
-  let displayContents = isAdmin ? rawContents : myContents;
-  
-  if (searchQuery) {
-    const qLower = searchQuery.toLowerCase();
-    displayContents = displayContents.filter(item => 
-      item.title?.toLowerCase().includes(qLower) || 
-      item.author_name?.toLowerCase().includes(qLower) || 
-      item.team?.toLowerCase().includes(qLower) ||
-      item.content_type?.toLowerCase().includes(qLower)
-    );
-  }
-  
-  // 피드백이 있는 항목 (수정요청 상태이거나, 보충 의견이 있으면서 아직 읽음(Dismiss) 처리 안 한 경우)
-  const feedbackItems = myContents.filter(i => {
-    if (i.isRead) return false;
-    const hasComment = !!i.feedback_comment;
-    const isRevision = i.status === 'revision' || i.status === 'final_revision';
-    const isApprovedWithComment = (i.status === 'approved' || i.status === 'completed') && hasComment;
-    return isRevision || isApprovedWithComment;
+  const rawContents = (contents || []).map(item => {
+    let pDate = null, emailInJson = '', crewString = '';
+    if (item.content_body?.startsWith('{')) {
+      try {
+        const pb = JSON.parse(item.content_body);
+        pDate = pb.publishDate || null;
+        emailInJson = pb.authorEmail || '';
+        if (typeof pb.crew === 'string') crewString = pb.crew;
+        else if (Array.isArray(pb.crew)) crewString = pb.crew.map((c: any) => c.name || '').join(',');
+      } catch {}
+    }
+    const isAuthor = user && (emailInJson === userEmail || item.author_name === userEmail || item.author_name === realName || (realName && item.author_name?.includes(realName)));
+    const isCrew = user && realName && crewString.includes(realName);
+    const isMine = !!(isAuthor || isCrew);
+    return { ...item, parsedPublishDate: pDate, isMine };
   });
 
-  const StatusBadge = ({ status }: { status: string }) => {
-    switch (status) {
-      case 'draft': return <span className="badge" style={{backgroundColor: '#e5e7eb', color: '#4b5563'}}>임시저장</span>;
-      case 'pending': return <span className="badge pending">대기</span>;
-      case 'revision': return <span className="badge revision">기획안 수정요청</span>;
-      case 'rejected': return <span className="badge" style={{backgroundColor: '#9ca3af', color: 'white'}}>반려</span>;
-      case 'approved': return <span className="badge approved">기획안 통과</span>;
-      case 'final_submitted': return <span className="badge" style={{backgroundColor: '#059669'}}>완성본 제출됨</span>;
-      case 'final_revision': return <span className="badge" style={{backgroundColor: '#dc2626'}}>완성본 수정요청</span>;
-      case 'completed': return <span className="badge" style={{backgroundColor: '#3b82f6'}}>업로드 대기</span>;
-      case 'uploaded': return <span className="badge" style={{backgroundColor: '#10b981'}}>업로드 완료</span>;
-      default: return null;
-    }
-  };
+  const myContents = rawContents.filter(i => i.isMine);
+
+  // 미제출 완성본: 기획안 통과 (approved) 상태인 항목
+  const pendingFinalCount = myContents.filter(i => i.status === 'approved').length;
+
+  const waitingItems = myContents.filter(i =>
+    ['pending', 'revision', 'final_submitted', 'final_revision'].includes(i.status)
+  ).sort((a, b) => (b.status.includes('revision') ? 1 : 0) - (a.status.includes('revision') ? 1 : 0));
+
+  const completedItems = myContents.filter(i =>
+    ['approved', 'completed', 'uploaded'].includes(i.status)
+  );
 
   const getTeamColor = (team: string) => {
-    switch(team) {
+    switch (team) {
       case '유튜브': return { bg: '#fee2e2', text: '#ef4444' };
       case '인스타': return { bg: '#fce7f3', text: '#ec4899' };
       case '블로그': return { bg: '#dcfce7', text: '#22c55e' };
       case '단장 팀': return { bg: '#e0e7ff', text: '#4f46e5' };
       default: return { bg: '#f3f4f6', text: '#6b7280' };
     }
-  }
+  };
 
-  const getTypeColor = (typeStr: string) => {
-    switch(typeStr) {
+  const getTypeColor = (t: string) => {
+    switch (t) {
       case '영상(롱폼)': return { bg: '#ffedd5', text: '#f97316' };
       case '영상(숏폼)': return { bg: '#fef3c7', text: '#d97706' };
       case '카드뉴스': return { bg: '#dbeafe', text: '#3b82f6' };
       case '글 기사': return { bg: '#ecfdf5', text: '#10b981' };
       default: return { bg: '#f3f4f6', text: '#6b7280' };
     }
-  }
+  };
+
+  const dDayColor = (d: number | null) => {
+    if (d === null) return '#94A3B8';
+    if (d <= 3) return '#EF4444';
+    if (d <= 7) return '#F59E0B';
+    return '#003378';
+  };
+
+  const formatDDay = (d: number | null) => {
+    if (d === null) return '미설정';
+    if (d === 0) return 'D-Day';
+    if (d < 0) return `D+${Math.abs(d)}`;
+    return `D-${d}`;
+  };
 
   return (
-    <div className="flex-col gap-4">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>
-          {isAdmin ? `${currentMonth}월 콘텐츠 현황 (관리자)` : `${currentMonth}월 기획안 타임라인`}
-        </h2>
-        {isAdmin && <span className="badge" style={{ backgroundColor: 'var(--color-primary)' }}>관리자 모드</span>}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+      {/* 헤더 */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+        <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#1e293b' }}>내 워크스페이스</h2>
       </div>
 
-      {user && (
-        <>
-          <div className="card" style={{ marginBottom: '1.5rem', background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', padding: '2rem' }}>
-            <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              환영합니다, <span style={{ color: 'var(--color-primary)' }}>{userNameToShow}</span>님! 🎉
-            </h1>
-            <p style={{ color: 'var(--color-text-muted)', fontSize: '1.2rem' }}>
-              {currentMonth}월 나의 기획안 진행 현황을 한눈에 확인하세요.
-            </p>
-          </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: 'auto 2fr 1fr', gap: '1.5rem', marginBottom: '2rem', alignItems: 'stretch' }}>
-            {/* 1. 업로드 영역 (반응형 애니메이션 컴포넌트) */}
-            <UploadCard />
+      {/* ── ROW 1: 업로드 | 승인대기 | 마감일 ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 300px', gap: '1.25rem', alignItems: 'stretch' }}>
 
-            {/* 2. 승인 대기 중 */}
-            <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-              <h3 style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: '1rem', color: '#1e293b' }}>
-                승인 대기 중 ({myContents.filter(i => ['pending', 'revision', 'final_submitted', 'final_revision'].includes(i.status)).length})
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', flex: 1, overflowY: 'auto', maxHeight: '180px', paddingRight: '0.5rem' }}>
-                {myContents.filter(i => ['pending', 'revision', 'final_submitted', 'final_revision'].includes(i.status))
-                  .sort((a, b) => (b.status.includes('revision') ? 1 : 0) - (a.status.includes('revision') ? 1 : 0))
-                  .map(item => {
-                    const isRev = item.status.includes('revision');
-                    return (
-                    <Link key={item.id} href={`/${item.status.includes('final') ? 'final-works' : 'proposals'}/submit?id=${item.id}`} style={{ textDecoration: 'none' }}>
-                      <div style={{ 
-                        backgroundColor: isRev ? '#FEF3C7' : '#F8FAFC', 
-                        border: isRev ? 'none' : '1px solid #E2E8F0', 
-                        borderRadius: '999px', 
-                        padding: '0.8rem 1.2rem', 
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', overflow: 'hidden' }}>
-                          <span style={{ fontSize: '0.75rem', padding: '6px 12px', borderRadius: '999px', backgroundColor: isRev ? '#F59E0B' : '#F1F5F9', color: isRev ? 'white' : '#64748B', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                            {item.status.includes('final') ? '완성본' : '기획안'}
-                          </span>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', overflow: 'hidden' }}>
-                            <span style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</span>
-                            <span style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.content_type || '콘텐츠'} - {item.author_name || '이름 없음'}</span>
-                          </div>
-                        </div>
-                        {isRev ? 
-                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#FDE38A', color: '#B45309', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.2rem', flexShrink: 0 }}>!</div> 
-                          : <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'transparent', color: '#CBD5E1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>✏️</div>}
-                      </div>
-                    </Link>
-                    );
-                  })}
-              </div>
+        {/* 업로드 카드 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+          <UploadCard />
+          {pendingFinalCount > 0 && (
+            <div style={{ background: '#FEF3C7', borderRadius: '12px', padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', fontWeight: 700, color: '#B45309' }}>
+              <span style={{ background: '#F59E0B', color: 'white', borderRadius: '999px', padding: '2px 8px', fontSize: '0.75rem' }}>{pendingFinalCount}</span>
+              미제출 완성본
             </div>
+          )}
+        </div>
 
-            {/* 3. 승인 완료 */}
-            <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-              <h3 style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: '1rem', color: '#1e293b' }}>
-                승인 완료 ({myContents.filter(i => ['approved', 'completed', 'uploaded'].includes(i.status)).length})
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', flex: 1, overflowY: 'auto', maxHeight: '180px', paddingRight: '0.5rem' }}>
-                {myContents.filter(i => ['approved', 'completed', 'uploaded'].includes(i.status))
-                  .map(item => {
-                    const isUp = item.status === 'uploaded';
-                    const isComp = item.status === 'completed';
-                    const cBg = isUp ? '#99B3D6' : isComp ? '#C0CFE4' : '#E6EBF2';
-                    const bBg = isUp ? '#002454' : isComp ? '#99B3D6' : '#FFFFFF';
-                    const bCol = isUp ? 'white' : isComp ? '#002454' : '#003378';
-                    return (
-                    <Link key={item.id} href={`/${item.status === 'approved' ? 'final-works/submit?initialId' : 'final-works/submit?id'}=${item.id}`} style={{ textDecoration: 'none' }}>
-                      <div style={{ 
-                        backgroundColor: cBg, 
-                        border: 'none',
-                        borderRadius: '999px', 
-                        padding: '0.8rem 1.2rem', 
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', 
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)' 
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', overflow: 'hidden' }}>
-                          <span style={{ 
-                            fontSize: '0.75rem', padding: '6px 12px', borderRadius: '999px', 
-                            backgroundColor: bBg, 
-                            color: bCol, 
-                            fontWeight: 700, whiteSpace: 'nowrap' 
-                          }}>
-                            {item.team || '팀 없음'}
-                          </span>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', overflow: 'hidden' }}>
-                            <span style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</span>
-                            <span style={{ fontSize: '0.7rem', color: '#334155', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.content_type || '콘텐츠'} - {item.author_name || '이름 없음'}</span>
-                          </div>
-                        </div>
-                        <div style={{ fontSize: '0.8rem', backgroundColor: bBg, color: bCol, padding: '6px 14px', borderRadius: '999px', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
-                          {item.parsedPublishDate || '미정'}
-                        </div>
+        {/* 승인 대기 중 */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: '260px' }}>
+          <h3 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: '0.9rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            승인 대기 중
+            <span style={{ background: '#E6EBF2', color: '#003378', borderRadius: '999px', padding: '2px 10px', fontSize: '0.78rem', fontWeight: 800 }}>
+              {waitingItems.length}
+            </span>
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', flex: 1, overflowY: 'auto' }}>
+            {waitingItems.length === 0 && (
+              <div style={{ color: '#CBD5E1', fontSize: '0.9rem', textAlign: 'center', marginTop: '2rem' }}>대기 중인 항목이 없습니다</div>
+            )}
+            {waitingItems.map(item => {
+              const isRev = item.status.includes('revision');
+              return (
+                <Link key={item.id} href={`/${item.status.includes('final') ? 'final-works' : 'proposals'}/submit?id=${item.id}`} style={{ textDecoration: 'none' }}>
+                  <div style={{
+                    backgroundColor: isRev ? '#FEF3C7' : '#F8FAFC',
+                    border: isRev ? 'none' : '1px solid #E2E8F0',
+                    borderRadius: '999px',
+                    padding: '0.65rem 1.1rem',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
+                      <span style={{ fontSize: '0.72rem', padding: '4px 10px', borderRadius: '999px', backgroundColor: isRev ? '#F59E0B' : '#F1F5F9', color: isRev ? 'white' : '#64748B', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        {item.status.includes('final') ? '완성본' : '기획안'}
+                      </span>
+                      <div style={{ overflow: 'hidden' }}>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#94A3B8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.content_type} · {item.author_name}</div>
                       </div>
-                    </Link>
-                    );
-                  })}
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* 피드백 알림 섹션 (Client Component) */}
-      {!isAdmin && feedbackItems.length > 0 && (
-        <FeedbackBanner initialItems={feedbackItems} />
-      )}
-
-      <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
-        <div style={{ flex: 3.5 }}>
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.95rem' }}>
-              <thead style={{ borderBottom: '2px solid #e2e8f0' }}>
-                <tr>
-                  <th style={{ padding: '1.5rem 1rem', fontWeight: 600, color: '#64748b', fontSize: '0.85rem', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>등록일/상태</th>
-                  <th style={{ padding: '1.5rem 1rem', fontWeight: 600, color: '#64748b', fontSize: '0.85rem', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>분류</th>
-                  {isAdmin && <th style={{ padding: '1.5rem 1rem', fontWeight: 600, color: '#64748b', fontSize: '0.85rem', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>작성자</th>}
-                  <th style={{ padding: '1.5rem 1rem', fontWeight: 600, color: '#64748b', fontSize: '0.85rem', letterSpacing: '0.05em', width: isAdmin ? '25%' : '35%' }}>콘텐츠 제목</th>
-                  <th style={{ padding: '1.5rem 1rem', fontWeight: 600, color: '#64748b', fontSize: '0.85rem', letterSpacing: '0.05em', width: isAdmin ? '35%' : '45%' }}>피드백 / 코멘트</th>
-                  {isAdmin && <th style={{ padding: '1.5rem 1rem', fontWeight: 600, color: '#64748b', fontSize: '0.85rem', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>관리 옵션</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {displayContents.length === 0 && (
-                  <tr><td colSpan={isAdmin ? 6 : 5} style={{ padding: '2rem', textAlign: 'center', color: '#9ca3af' }}>데이터가 없습니다.</td></tr>
-                )}
-                {displayContents.map(item => (
-                  <tr key={item.id} style={{ borderBottom: '1px solid var(--color-border)', verticalAlign: 'top' }}>
-                    <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
-                      <div style={{ color: 'var(--color-text-muted)', marginBottom: '0.5rem', fontSize: '0.8rem' }}>
-                        {new Date(item.created_at).toLocaleDateString()}
-                      </div>
-                      { (isAdmin || item.isMine ) ? (
-                          <StatusBadge status={item.status} />
-                      ) : (
-                          <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>-</span>
-                      )}
-                    </td>
-                    <td style={{ padding: '1.25rem 1rem', whiteSpace: 'nowrap' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'flex-start' }}>
-                        {item.team ? (
-                          <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px', backgroundColor: getTeamColor(item.team).bg, color: getTeamColor(item.team).text }}>
-                            {item.team}
-                          </span>
-                        ) : null}
-                        {item.content_type ? (
-                          <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px', backgroundColor: getTypeColor(item.content_type).bg, color: getTypeColor(item.content_type).text }}>
-                            {item.content_type}
-                          </span>
-                        ) : null}
-                      </div>
-                    </td>
-                    {isAdmin && <td style={{ padding: '1.25rem 1rem', fontWeight: 600, whiteSpace: 'nowrap', color: '#334155' }}>{item.author_name}</td>}
-                    <td style={{ padding: '1.5rem 1rem', fontWeight: 500 }}>
-                      <Link href={`/proposals/submit?id=${item.id}`} className="hover-title-link" style={{ textDecoration: 'none', color: '#0f172a', fontWeight: 800, fontSize: '1.15rem', display: 'block', marginBottom: '0.75rem' }}>
-                        {item.title}
-                      </Link>
-                      {item.parsedPublishDate && (
-                        <span style={{ fontSize: '0.8rem', backgroundColor: '#e0e7ff', color: 'var(--color-primary)', padding: '0.3rem 0.6rem', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', fontWeight: 600 }}>
-                          📅 업로드 희망: {item.parsedPublishDate}
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ padding: '1.5rem 1rem', verticalAlign: 'top' }}>
-                      { (isAdmin || item.isMine) && item.feedback_comment ? (
-                        <div style={{ 
-                            fontSize: '0.95rem', 
-                            lineHeight: '1.5',
-                            color: (item.status === 'approved' || item.status === 'completed' || item.status === 'active') ? '#1e40af' : '#991b1b', 
-                            backgroundColor: (item.status === 'approved' || item.status === 'completed' || item.status === 'active') ? '#eff6ff' : '#fef2f2', 
-                            padding: '1rem', 
-                            borderRadius: '12px',
-                            border: (item.status === 'approved' || item.status === 'completed' || item.status === 'active') ? '2px solid #bfdbfe' : '2px solid #fecaca',
-                            whiteSpace: 'pre-wrap',
-                            wordBreak: 'keep-all'
-                          }}>
-                          <div style={{ fontWeight: 800, marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            💬 {(item.status === 'approved' || item.status === 'completed') ? '참고/보충 의견' : '🚧 수정 요청 사항'}
-                          </div>
-                          <div style={{ fontWeight: 500 }}>{item.feedback_comment}</div>
-                        </div>
-                      ) : (
-                        <span style={{ color: '#cbd5e1', fontSize: '0.9rem', fontStyle: 'italic' }}>피드백 없음</span>
-                      )}
-                    </td>
-                    {isAdmin && (
-                      <td style={{ padding: '1rem' }}>
-                        <AdminStatusManager item={item} />
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                    {isRev
+                      ? <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#FDE38A', color: '#B45309', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1rem', flexShrink: 0 }}>!</div>
+                      : <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'transparent', color: '#CBD5E1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>✏️</div>
+                    }
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
 
-        {/* 우측 상단 캘린더 */}
-        <div style={{ width: '300px', flexShrink: 0, position: 'sticky', top: '10px' }}>
-          <DashboardCalendar contents={displayContents} />
+        {/* 마감일 D-Day 카드 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {/* 기획안 마감 */}
+          <div style={{ background: '#003378', borderRadius: '16px', padding: '1.25rem 1.5rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+              <span style={{ color: '#99B3D6', fontSize: '0.8rem', fontWeight: 700 }}>{deadlines.proposalLabel || '기획안 마감일'}</span>
+              {deadlines.proposalDeadline && (
+                <span style={{ color: '#C0CFE4', fontSize: '0.75rem' }}>{deadlines.proposalDeadline}</span>
+              )}
+            </div>
+            <div style={{ color: 'white', fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-1px' }}>
+              {formatDDay(proposalDDay)}
+            </div>
+          </div>
+          {/* 완성본 마감 */}
+          <div style={{ background: '#E6EBF2', borderRadius: '16px', padding: '1.25rem 1.5rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+              <span style={{ color: '#003378', fontSize: '0.8rem', fontWeight: 700 }}>{deadlines.finalLabel || '완성본 마감일'}</span>
+              {deadlines.finalDeadline && (
+                <span style={{ color: '#003378', fontSize: '0.75rem', opacity: 0.7 }}>{deadlines.finalDeadline}</span>
+              )}
+            </div>
+            <div style={{ color: dDayColor(finalDDay), fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-1px' }}>
+              {formatDDay(finalDDay)}
+            </div>
+            {!deadlines.finalDeadline && (
+              <Link href="/admin/settings" style={{ color: '#99B3D6', fontSize: '0.75rem', marginTop: '0.3rem', textDecoration: 'none' }}>
+                관리자 설정에서 마감일 설정 →
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── ROW 2: 공지사항 | 완료된 콘텐츠 ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', alignItems: 'stretch' }}>
+
+        {/* 공지사항 */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <h3 style={{ fontWeight: 800, fontSize: '1rem', color: '#1e293b' }}>공지사항</h3>
+            <Link href="/notices" style={{ fontSize: '0.78rem', color: '#94A3B8', textDecoration: 'none', fontWeight: 600 }}>전체보기 →</Link>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            {[
+              { id: 1, title: '[필독] 기획안 작성 시 주의사항', date: '2026-04-01', isImportant: true },
+              { id: 2, title: '[필독] 기획안 작성 시 주의사항', date: '2026-03-28', isImportant: false },
+            ].map(notice => (
+              <Link key={notice.id} href="/notices" style={{ textDecoration: 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 1rem', borderRadius: '12px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                  {notice.isImportant && (
+                    <span style={{ background: '#FDE38A', color: '#B45309', borderRadius: '999px', padding: '2px 8px', fontSize: '0.7rem', fontWeight: 800, whiteSpace: 'nowrap', flexShrink: 0 }}>공지사항</span>
+                  )}
+                  <span style={{ fontSize: '0.88rem', fontWeight: notice.isImportant ? 700 : 500, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{notice.title}</span>
+                  <span style={{ fontSize: '0.72rem', color: '#94A3B8', whiteSpace: 'nowrap', marginLeft: 'auto', flexShrink: 0 }}>{notice.date}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* 완료된 콘텐츠 */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <h3 style={{ fontWeight: 800, fontSize: '1rem', color: '#1e293b' }}>
+              완료된 콘텐츠
+              <span style={{ background: '#E6EBF2', color: '#003378', borderRadius: '999px', padding: '2px 10px', fontSize: '0.78rem', fontWeight: 800, marginLeft: '0.5rem' }}>
+                {completedItems.length}
+              </span>
+            </h3>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', overflowY: 'auto', maxHeight: '200px' }}>
+            {completedItems.length === 0 && (
+              <div style={{ color: '#CBD5E1', fontSize: '0.9rem', textAlign: 'center', marginTop: '1.5rem' }}>완료된 콘텐츠가 없습니다</div>
+            )}
+            {completedItems.map(item => {
+              const isUp = item.status === 'uploaded';
+              const isComp = item.status === 'completed';
+              const cBg = isUp ? '#99B3D6' : isComp ? '#C0CFE4' : '#E6EBF2';
+              const bBg = isUp ? '#002454' : isComp ? '#99B3D6' : '#FFFFFF';
+              const bCol = isUp ? 'white' : isComp ? '#002454' : '#003378';
+              return (
+                <Link key={item.id} href={`/${item.status === 'approved' ? 'final-works/submit?initialId' : 'final-works/submit?id'}=${item.id}`} style={{ textDecoration: 'none' }}>
+                  <div style={{ backgroundColor: cBg, borderRadius: '999px', padding: '0.65rem 1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
+                      <span style={{ fontSize: '0.72rem', padding: '4px 10px', borderRadius: '999px', backgroundColor: bBg, color: bCol, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        {item.team || '팀 없음'}
+                      </span>
+                      <div style={{ overflow: 'hidden' }}>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.content_type} · {item.author_name}</div>
+                      </div>
+                    </div>
+                    {item.parsedPublishDate && (
+                      <span style={{ fontSize: '0.78rem', backgroundColor: bBg, color: bCol, padding: '4px 10px', borderRadius: '999px', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        {item.parsedPublishDate}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── ROW 3: 캘린더 | 내 콘텐츠 전체 ── */}
+      <div>
+        <h3 style={{ fontWeight: 800, fontSize: '1rem', color: '#1e293b', marginBottom: '1rem' }}>전체 현황 / 전체 콘텐츠 캘린더</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '1.25rem', alignItems: 'start' }}>
+
+          {/* 이번달 + 다음달 캘린더 */}
+          <DashboardCalendar contents={rawContents} />
+
+          {/* 내 콘텐츠 전체 테이블 */}
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #E6EBF2' }}>
+                  {['색상', '날짜', '콘텐츠 종류', '콘텐츠 제목', '참여인원', '기획안', '완성본', '업로드 여부'].map(h => (
+                    <th key={h} style={{ padding: '0.85rem 0.75rem', fontWeight: 700, color: '#64748B', fontSize: '0.78rem', whiteSpace: 'nowrap', textAlign: 'left' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {myContents.length === 0 && (
+                  <tr><td colSpan={8} style={{ padding: '2rem', textAlign: 'center', color: '#CBD5E1' }}>콘텐츠가 없습니다</td></tr>
+                )}
+                {myContents.map(item => {
+                  const tc = getTeamColor(item.team || '');
+                  const tyc = getTypeColor(item.content_type || '');
+                  const statusDot: Record<string, string> = {
+                    pending: '#F59E0B', revision: '#EF4444', approved: '#10B981',
+                    final_submitted: '#3B82F6', final_revision: '#EF4444', completed: '#003378', uploaded: '#002454'
+                  };
+                  const dot = statusDot[item.status] || '#CBD5E1';
+                  return (
+                    <tr key={item.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <td style={{ padding: '0.75rem' }}>
+                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: dot, margin: '0 auto' }} />
+                      </td>
+                      <td style={{ padding: '0.75rem', color: '#64748B', whiteSpace: 'nowrap', fontSize: '0.78rem' }}>
+                        {new Date(item.created_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
+                        {item.parsedPublishDate && <div style={{ fontSize: '0.72rem', color: '#94A3B8' }}>{item.parsedPublishDate}</div>}
+                      </td>
+                      <td style={{ padding: '0.75rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                          {item.team && <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: tc.bg, color: tc.text, display: 'inline-block' }}>{item.team}</span>}
+                          {item.content_type && <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: tyc.bg, color: tyc.text, display: 'inline-block' }}>{item.content_type}</span>}
+                        </div>
+                      </td>
+                      <td style={{ padding: '0.75rem', fontWeight: 700, color: '#1e293b' }}>
+                        <Link href={`/proposals/submit?id=${item.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                          {item.title}
+                        </Link>
+                        <div style={{ fontSize: '0.72rem', color: '#94A3B8', fontWeight: 400 }}>{item.author_name}</div>
+                      </td>
+                      <td style={{ padding: '0.75rem', fontSize: '0.78rem', color: '#475569' }}>
+                        {item.author_name || '-'}
+                      </td>
+                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                        <span style={{ fontSize: '0.72rem', padding: '3px 8px', borderRadius: '999px', backgroundColor: ['pending','revision','approved'].includes(item.status) ? '#FEF3C7' : '#E6EBF2', color: '#003378', fontWeight: 700 }}>
+                          {item.status === 'revision' ? '수정요청' : item.status === 'approved' ? '통과' : '대기'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                        {['final_submitted','final_revision','completed','uploaded'].includes(item.status) ? (
+                          <span style={{ fontSize: '0.72rem', padding: '3px 8px', borderRadius: '999px', backgroundColor: '#E6EBF2', color: '#003378', fontWeight: 700 }}>
+                            {item.status === 'final_revision' ? '수정요청' : '제출됨'}
+                          </span>
+                        ) : <span style={{ color: '#CBD5E1' }}>-</span>}
+                      </td>
+                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                        {item.status === 'uploaded'
+                          ? <span style={{ fontSize: '0.72rem', padding: '3px 8px', borderRadius: '999px', backgroundColor: '#D1FAE5', color: '#047857', fontWeight: 700 }}>완료</span>
+                          : <span style={{ color: '#CBD5E1', fontSize: '0.8rem' }}>-</span>
+                        }
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

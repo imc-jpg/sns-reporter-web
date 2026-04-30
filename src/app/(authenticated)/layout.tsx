@@ -170,6 +170,9 @@ export default function DashboardLayout({
           <Link href="/admin/users" style={getLinkStyle('/admin/users')}>
             👥 회원 명단 관리
           </Link>
+          <Link href="/admin/settings" style={getLinkStyle('/admin/settings')}>
+            ⚙️ 마감일 설정
+          </Link>
         </nav>
 
         <div style={{ padding: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
