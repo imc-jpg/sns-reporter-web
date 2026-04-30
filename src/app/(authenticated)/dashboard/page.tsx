@@ -6,6 +6,7 @@ import DashboardCalendar from "@/components/DashboardCalendar";
 import AdminStatusManager from "@/components/AdminStatusManager";
 import MissingFinalWorksPopup from "@/components/MissingFinalWorksPopup";
 import PendingItem from "@/components/PendingItem";
+import FeedbackBanner from "@/components/FeedbackBanner";
 
 export const dynamic = 'force-dynamic';
 
@@ -143,8 +144,15 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     return `D-${d}`;
   };
 
+  const myRecentFeedbacks = myContents
+    .filter(item => item.feedback_comment && item.feedback_comment.trim() !== '')
+    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+    .slice(0, 3);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+      <FeedbackBanner feedbacks={myRecentFeedbacks} />
 
       {/* 헤더 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
