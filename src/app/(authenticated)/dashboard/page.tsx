@@ -164,7 +164,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         </div>
 
         {/* 승인 대기 중 */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: '260px' }}>
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', height: '280px', overflow: 'hidden' }}>
           <h3 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: '0.9rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             승인 대기 중
             <span style={{ background: '#E6EBF2', color: '#003378', borderRadius: '999px', padding: '2px 10px', fontSize: '0.78rem', fontWeight: 800 }}>
