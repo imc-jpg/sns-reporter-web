@@ -18,6 +18,7 @@ export default function NotificationsPopup({ userEmail, userName }: { userEmail:
   useEffect(() => {
     if (isOpen) {
       setLoading(true);
+      const fetchFeedbacks = async () => {
         try {
           // 캐싱 방지를 위해 timestamp 추가
           const res = await fetch(`/api/notifications?t=${new Date().getTime()}`);
