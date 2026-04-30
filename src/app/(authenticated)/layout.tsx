@@ -105,19 +105,9 @@ export default function DashboardLayout({
     router.push('/login');
   };
 
-  const getLinkStyle = (path: string) => {
+  const getLinkClass = (path: string) => {
     const isActive = pathname === path || (path !== '/dashboard' && pathname?.startsWith(path));
-    return {
-      padding: '0.75rem 1rem',
-      borderRadius: '8px',
-      fontSize: '0.95rem',
-      fontWeight: isActive ? 600 : 500,
-      color: isActive ? '#001430' : 'rgba(255, 255, 255, 0.7)',
-      backgroundColor: isActive ? 'white' : 'transparent',
-      transition: 'all 0.2s',
-      display: 'block',
-      textDecoration: 'none'
-    };
+    return `sidebar-link ${isActive ? 'active' : ''}`;
   };
 
   return (
@@ -137,45 +127,55 @@ export default function DashboardLayout({
           flexShrink: 0
         }}>
         
-        <div style={{ padding: '2rem 1.5rem 1rem 1.5rem' }}>
+        <div style={{ padding: '2rem 1.5rem 1.5rem 1.5rem' }}>
           {/* Logo with text */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-             <img src="/yonsei_media_logo.png" alt="연세대학교 미디어센터" style={{ width: '100%', height: 'auto', display: 'block', maxWidth: '180px', filter: 'brightness(0) invert(1)' }} />
-          </div>
-          <h1 style={{ fontWeight: 800, color: 'white', fontSize: '1rem', lineHeight: 1.35, letterSpacing: '-0.02em', opacity: 0.9 }}>
-            와이온 기획안 통합 시스템
-          </h1>
+          <Link href="/dashboard" style={{ display: 'block', textDecoration: 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+               <img src="/yonsei_media_logo.png" alt="연세대학교 미디어센터" style={{ width: '100%', height: 'auto', display: 'block', maxWidth: '180px', filter: 'brightness(0) invert(1)' }} />
+            </div>
+            <h1 style={{ fontWeight: 800, color: 'white', fontSize: '1rem', lineHeight: 1.35, letterSpacing: '-0.02em', opacity: 0.9 }}>
+              와이온 기획안 통합관리 시스템
+            </h1>
+          </Link>
         </div>
 
-        <nav style={{ padding: '0 1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
-          <div style={{ padding: '0 0.5rem 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginTop: '0.5rem' }}>MAIN</div>
-          <Link href="/dashboard" style={getLinkStyle('/dashboard')}>
-            내 콘텐츠 현황
+        <nav style={{ padding: '0', display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
+          <div style={{ padding: '0 1.5rem 0.5rem 1.5rem', fontSize: '0.75rem', fontWeight: 600, color: 'rgba(255,255,255,0.6)', marginTop: '0.5rem', letterSpacing: '0.05em' }}>MAIN</div>
+          <Link href="/dashboard" className={getLinkClass('/dashboard')}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            대시보드
           </Link>
-          <Link href="/proposals" style={getLinkStyle('/proposals')}>
+          <Link href="/proposals" className={getLinkClass('/proposals')}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
             전체 기획안
           </Link>
-          <Link href="/final-works" style={getLinkStyle('/final-works')}>
+          <Link href="/final-works" className={getLinkClass('/final-works')}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
             전체 완성본
           </Link>
 
-          <div style={{ padding: '0 0.5rem 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginTop: '1.5rem' }}>INFO</div>
-          <Link href="/guidelines" style={getLinkStyle('/guidelines')}>
-            콘텐츠 가이드라인
-          </Link>
-          <Link href="/notices" style={getLinkStyle('/notices')}>
+          <div style={{ padding: '0 1.5rem 0.5rem 1.5rem', fontSize: '0.75rem', fontWeight: 600, color: 'rgba(255,255,255,0.6)', marginTop: '1.5rem', letterSpacing: '0.05em' }}>INFO</div>
+          <Link href="/notices" className={getLinkClass('/notices')}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
             공지사항
           </Link>
-          <Link href="/resources" style={getLinkStyle('/resources')}>
+          <Link href="/guidelines" className={getLinkClass('/guidelines')}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+            가이드라인
+          </Link>
+          <Link href="/resources" className={getLinkClass('/resources')}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
             자료실
           </Link>
 
-          <div style={{ padding: '0 0.5rem 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginTop: '1.5rem' }}>ADMIN</div>
-          <Link href="/admin/users" style={getLinkStyle('/admin/users')}>
-            👥 회원 명단 관리
+          <div style={{ padding: '0 1.5rem 0.5rem 1.5rem', fontSize: '0.75rem', fontWeight: 600, color: 'rgba(255,255,255,0.6)', marginTop: '1.5rem', letterSpacing: '0.05em' }}>ADMIN</div>
+          <Link href="/admin/users" className={getLinkClass('/admin/users')}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+            회원 명단 관리
           </Link>
-          <Link href="/admin/settings" style={getLinkStyle('/admin/settings')}>
-            ⚙️ 마감일 설정
+          <Link href="/admin/settings" className={getLinkClass('/admin/settings')}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+            마감일 설정
           </Link>
         </nav>
 
