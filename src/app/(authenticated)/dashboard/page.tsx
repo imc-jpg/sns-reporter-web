@@ -4,6 +4,7 @@ import Link from "next/link";
 import UploadCard from "@/components/UploadCard";
 import DashboardCalendar from "@/components/DashboardCalendar";
 import AdminStatusManager from "@/components/AdminStatusManager";
+import MissingFinalWorksPopup from "@/components/MissingFinalWorksPopup";
 
 export const dynamic = 'force-dynamic';
 
@@ -155,12 +156,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         {/* 업로드 카드 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           <UploadCard />
-          {pendingFinalCount > 0 && (
-            <div style={{ background: '#FEF3C7', borderRadius: '12px', padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', fontWeight: 700, color: '#B45309' }}>
-              <span style={{ background: '#F59E0B', color: 'white', borderRadius: '999px', padding: '2px 8px', fontSize: '0.75rem' }}>{pendingFinalCount}</span>
-              미제출 완성본
-            </div>
-          )}
+          <MissingFinalWorksPopup items={myContents.filter(i => i.status === 'approved')} />
         </div>
 
         {/* 승인 대기 중 */}
