@@ -40,10 +40,28 @@ export default function NotificationsPopup({ userEmail, userName }: { userEmail:
                 else if (Array.isArray(pb.crew)) crewString = pb.crew.map((c: any) => c.name || '').join(',');
               } catch {}
             }
-            const isAuthor = userEmail && (emailInJson === userEmail || item.author_name === userEmail);
-            const isNameMatch = userName && (item.author_name === userName || item.author_name?.includes(userName));
-            const isCrew = userName && crewString.includes(userName);
-            return isAuthor || isNameMatch || isCrew;
+            const cleanEmail = emailInJson.trim().toLowerCase();
+            const myEmail = (userEmail || '').trim().toLowerCase();
+            const isEmailMatch = myEmail && (cleanEmail === myEmail || item.author_name?.toLowerCase() === myEmail);
+            
+            const cleanName = (userName || '').replace(/\s/g, '');
+            const cleanAuthor = (item.author_name || '').replace(/\s/g, '');
+            let isNameMatch = false;
+            if (cleanName && cleanAuthor) {
+              isNameMatch = cleanAuthor.includes(cleanName) || cleanName.includes(cleanAuthor);
+              if (!isNameMatch && cleanName.length >= 2 && cleanAuthor.length >= 2) {
+                // Check if they share at least 2 consecutive characters (e.g. 용준)
+                for (let i = 0; i < cleanName.length - 1; i++) {
+                  if (cleanAuthor.includes(cleanName.substring(i, i+2))) {
+                    isNameMatch = true;
+                    break;
+                  }
+                }
+              }
+            }
+            
+            const isCrew = cleanName && crewString.replace(/\s/g, '').includes(cleanName);
+            return isEmailMatch || isNameMatch || isCrew;
           });
           setNotifications(mine.slice(0, 15));
         }
