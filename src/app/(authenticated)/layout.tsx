@@ -131,10 +131,10 @@ export default function DashboardLayout({
           {/* Logo with text */}
           <Link href="/dashboard" style={{ display: 'block', textDecoration: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-               <img src="/yonsei_media_logo.png" alt="연세대학교 미디어센터" style={{ width: '100%', height: 'auto', display: 'block', maxWidth: '180px', filter: 'brightness(0) invert(1)' }} />
+               <img src="/yonsei_media_logo.png" alt="연세대학교 미디어센터" style={{ width: '100%', height: 'auto', display: 'block', maxWidth: '180px' }} />
             </div>
-            <h1 style={{ fontWeight: 800, color: 'white', fontSize: '1rem', lineHeight: 1.35, letterSpacing: '-0.02em', opacity: 0.9 }}>
-              와이온 기획안 통합관리 시스템
+            <h1 style={{ fontWeight: 800, color: 'white', fontSize: '0.9rem', lineHeight: 1.35, letterSpacing: '-0.02em', opacity: 0.9, whiteSpace: 'nowrap' }}>
+              SNS기자단 기획안 통합관리 시스템
             </h1>
           </Link>
         </div>
@@ -220,10 +220,12 @@ export default function DashboardLayout({
                   router.push(`/search${window.location.search.includes('admin=true') ? '?admin=true' : ''}`);
                 }
               }}
-              style={{ display: 'flex', alignItems: 'center', backgroundColor: 'white', borderRadius: '8px', padding: '0.5rem 1rem', width: '360px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}
+              style={{ display: 'flex', alignItems: 'center', backgroundColor: '#ffffff', borderRadius: '6px', padding: '0 1rem', width: '320px', height: '40px', border: '1px solid #e2e8f0', transition: 'border-color 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-              <input type="text" name="q" placeholder="Search" autoComplete="off" defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('q') || '' : ''} style={{ border: 'none', backgroundColor: 'transparent', outline: 'none', marginLeft: '0.5rem', width: '100%', fontSize: '0.9rem', color: '#334155' }} />
+              <input type="text" name="q" placeholder="Search" autoComplete="off" defaultValue={typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('q') || '' : ''} style={{ border: 'none', backgroundColor: 'transparent', outline: 'none', flex: 1, fontSize: '0.9rem', color: '#334155' }} />
+              <button type="submit" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', marginLeft: '0.5rem' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              </button>
             </form>
           </div>
 

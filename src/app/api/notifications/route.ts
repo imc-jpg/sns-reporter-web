@@ -5,21 +5,28 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
+    const url = new URL(request.url);
+    const isAdmin = url.searchParams.get('admin') === 'true';
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     
-    if (!user) {
+    if (!user && !isAdmin) {
       return NextResponse.json({ notifications: [] });
     }
 
-    const userEmail = user.email || null;
+    const userEmail = user?.email || null;
 
     // Fetch profile for realName
-    const { data: profile } = await supabase
-      .from('contents')
-      .select('author_name')
-      .eq('title', `PROFILE_${userEmail}`)
-      .single();
+    let profile = null;
+    if (userEmail) {
+      const { data } = await supabase
+        .from('contents')
+        .select('author_name')
+        .eq('title', `PROFILE_${userEmail}`)
+        .maybeSingle();
+      profile = data;
+    }
 
     const userName = user?.user_metadata?.full_name || user?.user_metadata?.name || null;
     const realName = profile?.author_name || userName || null;
@@ -27,11 +34,11 @@ export async function GET(request: Request) {
     // Fetch all valid contents
     const { data: contents } = await supabase
       .from('contents')
-      .select('id, title, status, feedback_comment, updated_at, author_name, content_body')
+      .select('id, title, status, feedback_comment, created_at, author_name, content_body')
       .neq('content_type', 'SYSTEM_PROFILE')
       .neq('title', 'SYSTEM_DEADLINES')
       .neq('status', 'draft')
-      .order('updated_at', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (!contents) {
       return NextResponse.json({ notifications: [] });
@@ -56,12 +63,12 @@ export async function GET(request: Request) {
       return { ...item, isMine };
     });
 
-    const myContents = rawContents.filter(i => i.isMine);
+    const myContents = isAdmin ? rawContents : rawContents.filter(i => i.isMine);
 
     // Get feedbacks
     const myRecentFeedbacks = myContents
       .filter(item => (item.feedback_comment && item.feedback_comment.trim() !== '') || item.status.includes('revision'))
-      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 15);
 
     return NextResponse.json({ notifications: myRecentFeedbacks });

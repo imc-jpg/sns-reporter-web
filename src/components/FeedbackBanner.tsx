@@ -7,17 +7,18 @@ export default function FeedbackBanner({ feedbacks }: { feedbacks: any[] }) {
   const [visibleItems, setVisibleItems] = useState<any[]>([]);
 
   useEffect(() => {
-    // Only show feedbacks that haven't been dismissed
+    // Only show feedbacks that haven't been dismissed for their current status
     const dismissed = JSON.parse(localStorage.getItem('dismissedFeedbacks') || '[]');
-    const toShow = feedbacks.filter(f => !dismissed.includes(f.id));
+    const toShow = feedbacks.filter(f => !dismissed.includes(`${f.id}_${f.status}`));
     setVisibleItems(toShow);
   }, [feedbacks]);
 
-  const dismiss = (id: string, e: React.MouseEvent) => {
+  const dismiss = (id: string, status: string, e: React.MouseEvent) => {
     e.preventDefault();
+    const key = `${id}_${status}`;
     const dismissed = JSON.parse(localStorage.getItem('dismissedFeedbacks') || '[]');
-    if (!dismissed.includes(id)) {
-      dismissed.push(id);
+    if (!dismissed.includes(key)) {
+      dismissed.push(key);
     }
     localStorage.setItem('dismissedFeedbacks', JSON.stringify(dismissed));
     setVisibleItems(prev => prev.filter(f => f.id !== id));
@@ -55,12 +56,12 @@ export default function FeedbackBanner({ feedbacks }: { feedbacks: any[] }) {
                 새로운 피드백이 도착했습니다: {item.title}
               </div>
               <div style={{ fontSize: '0.8rem', color: '#B45309', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                {item.feedback_comment}
+                {item.feedback_comment || '수정 요청이 등록되었습니다. 확인해주세요.'}
               </div>
             </div>
           </div>
           <button 
-            onClick={(e) => dismiss(item.id, e)}
+            onClick={(e) => dismiss(item.id, item.status, e)}
             style={{ 
               background: 'none', 
               border: 'none', 

@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { supabaseAdmin } from "@/utils/supabase/admin";
 import Link from "next/link";
 import UploadCard from "@/components/UploadCard";
-import DashboardCalendar from "@/components/DashboardCalendar";
+import DashboardCalendarArea from "@/components/DashboardCalendarArea";
 import AdminStatusManager from "@/components/AdminStatusManager";
 import MissingFinalWorksPopup from "@/components/MissingFinalWorksPopup";
 import PendingItem from "@/components/PendingItem";
@@ -107,7 +107,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   ).sort((a, b) => (b.status.includes('revision') ? 1 : 0) - (a.status.includes('revision') ? 1 : 0));
 
   const completedItems = myContents.filter(i =>
-    ['approved', 'completed', 'uploaded'].includes(i.status)
+    ['completed', 'uploaded'].includes(i.status)
   );
 
   const getTeamColor = (team: string) => {
@@ -145,9 +145,9 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   };
 
   const myRecentFeedbacks = myContents
-    .filter(item => item.feedback_comment && item.feedback_comment.trim() !== '')
-    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-    .slice(0, 3);
+    .filter(item => (item.feedback_comment && item.feedback_comment.trim() !== '') || item.status.includes('revision'))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 15);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -268,7 +268,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
               const bBg = isUp ? '#002454' : isComp ? '#99B3D6' : '#FFFFFF';
               const bCol = isUp ? 'white' : isComp ? '#002454' : '#003378';
               return (
-                <Link key={item.id} href={`/${item.status === 'approved' ? 'final-works/submit?initialId' : 'final-works/submit?id'}=${item.id}`} style={{ textDecoration: 'none' }}>
+                <Link key={item.id} href={`/final-works/submit?id=${item.id}`} style={{ textDecoration: 'none' }}>
                   <div style={{ backgroundColor: cBg, borderRadius: '999px', padding: '0.65rem 1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
                       <span style={{ fontSize: '0.72rem', padding: '4px 10px', borderRadius: '999px', backgroundColor: bBg, color: bCol, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
@@ -293,103 +293,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       </div>
 
       {/* ── ROW 3: 캘린더 | 내 콘텐츠 전체 ── */}
-      <div>
-        <h3 style={{ fontWeight: 800, fontSize: '1rem', color: '#1e293b', marginBottom: '1rem' }}>전체 현황 / 전체 콘텐츠 캘린더</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '1.25rem', alignItems: 'start' }}>
-
-          {/* 이번달 + 다음달 캘린더 */}
-          <DashboardCalendar contents={rawContents} />
-
-          {/* 내 콘텐츠 전체 테이블 */}
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #E6EBF2' }}>
-                  {['색상', '날짜', '플랫폼', '콘텐츠 제목', '참여인원', '기획안 / 완성본 / 업로드'].map(h => (
-                    <th key={h} style={{ padding: '0.85rem 0.75rem', fontWeight: 700, color: '#64748B', fontSize: '0.78rem', whiteSpace: 'nowrap', textAlign: 'left' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {myContents.length === 0 && (
-                  <tr><td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#CBD5E1' }}>콘텐츠가 없습니다</td></tr>
-                )}
-                {myContents.map(item => {
-                  const tc = getTeamColor(item.team || '');
-                  const tyc = getTypeColor(item.content_type || '');
-                  const statusDot: Record<string, string> = {
-                    pending: '#F59E0B', revision: '#EF4444', approved: '#10B981',
-                    final_submitted: '#3B82F6', final_revision: '#EF4444', completed: '#003378', uploaded: '#002454'
-                  };
-                  const dot = statusDot[item.status] || '#CBD5E1';
-                  return (
-                    <tr key={item.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={{ padding: '0.75rem' }}>
-                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: dot, margin: '0 auto' }} />
-                      </td>
-                      <td style={{ padding: '0.75rem', color: '#64748B', whiteSpace: 'nowrap', fontSize: '0.78rem' }}>
-                        {new Date(item.created_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
-                        {item.parsedPublishDate && <div style={{ fontSize: '0.72rem', color: '#94A3B8' }}>{item.parsedPublishDate}</div>}
-                      </td>
-                      <td style={{ padding: '0.75rem' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                          {item.team && <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: tc.bg, color: tc.text, display: 'inline-block' }}>{item.team}</span>}
-                          {item.content_type && <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: tyc.bg, color: tyc.text, display: 'inline-block' }}>{item.content_type}</span>}
-                        </div>
-                      </td>
-                      <td style={{ padding: '0.75rem', fontWeight: 700, color: '#1e293b' }}>
-                        <Link href={`/proposals/submit?id=${item.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                          {item.title}
-                        </Link>
-                        <div style={{ fontSize: '0.72rem', color: '#94A3B8', fontWeight: 400 }}>{item.author_name}</div>
-                      </td>
-                      <td style={{ padding: '0.75rem', fontSize: '0.78rem', color: '#475569' }}>
-                        {item.author_name || '-'}
-                      </td>
-                      <td style={{ padding: '0.75rem' }}>
-                        {/* 3단계 진행 체크박스: 기획안 통과 → 완성본 통과 → 게시 완료 */}
-                        {(() => {
-                          const s = item.status;
-                          const step1 = ['approved','final_submitted','final_revision','completed','uploaded'].includes(s);
-                          const step2 = ['completed','uploaded'].includes(s);
-                          const step3 = s === 'uploaded';
-                          const Check = ({ done, warn }: { done: boolean; warn?: boolean }) => (
-                            <div style={{
-                              width: '28px', height: '28px', borderRadius: '50%',
-                              backgroundColor: done ? '#10B981' : 'transparent',
-                              border: done ? 'none' : `2px solid ${warn ? '#F59E0B' : '#D1D5DB'}`,
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              flexShrink: 0,
-                            }}>
-                              {done && (
-                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                                  <path d="M2.5 7L5.5 10L11.5 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                              )}
-                            </div>
-                          );
-                          const Line = ({ active }: { active: boolean }) => (
-                            <div style={{ flex: 1, height: '2px', backgroundColor: active ? '#10B981' : '#E2E8F0', minWidth: '12px' }} />
-                          );
-                          return (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                              <Check done={step1} warn={s === 'revision'} />
-                              <Line active={step1 && step2} />
-                              <Check done={step2} warn={s === 'final_revision'} />
-                              <Line active={step2 && step3} />
-                              <Check done={step3} />
-                            </div>
-                          );
-                        })()}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <DashboardCalendarArea rawContents={rawContents} myContents={myContents} />
 
       {/* ── 관리자 패널: 상태 관리 및 피드백 ── */}
       {isAdmin && (

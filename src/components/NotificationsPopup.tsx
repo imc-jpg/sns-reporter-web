@@ -12,16 +12,18 @@ export default function NotificationsPopup({ userEmail, userName }: { userEmail:
   const supabase = createClient();
 
   useEffect(() => {
-    setIsAdmin(sessionStorage.getItem('isAdminBypass') === 'true');
-  }, [isOpen]);
-
-  useEffect(() => {
     if (isOpen) {
       setLoading(true);
+      const urlParams = new URLSearchParams(window.location.search);
+      const isAdminUrl = urlParams.get('admin') === 'true';
+      const isBypass = sessionStorage.getItem('isAdminBypass') === 'true';
+      const currentIsAdmin = isAdminUrl || isBypass;
+      setIsAdmin(currentIsAdmin);
+
       const fetchFeedbacks = async () => {
         try {
           // 캐싱 방지를 위해 timestamp 추가
-          const res = await fetch(`/api/notifications?t=${new Date().getTime()}`);
+          const res = await fetch(`/api/notifications?t=${new Date().getTime()}${currentIsAdmin ? '&admin=true' : ''}`);
           if (res.ok) {
             const data = await res.json();
             
@@ -71,7 +73,7 @@ export default function NotificationsPopup({ userEmail, userName }: { userEmail:
                 notifications.map(noti => (
                   <Link 
                     key={noti.id} 
-                    href={`/proposals/submit?id=${noti.id}`}
+                    href={`/${noti.status?.includes('final') ? 'final-works' : 'proposals'}/submit?id=${noti.id}`}
                     onClick={() => setIsOpen(false)}
                     style={{ 
                       display: 'block', padding: '1rem', borderBottom: '1px solid #f1f5f9', textDecoration: 'none', transition: 'background-color 0.2s'
@@ -81,10 +83,10 @@ export default function NotificationsPopup({ userEmail, userName }: { userEmail:
                   >
                     <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>{noti.title}</div>
                     <div style={{ fontSize: '0.75rem', color: '#64748b', lineHeight: 1.4, backgroundColor: '#f1f5f9', padding: '0.5rem', borderRadius: '6px' }}>
-                      💬 {noti.feedback_comment}
+                      💬 {noti.feedback_comment || '상태가 변경되었습니다. 확인해주세요.'}
                     </div>
                     <div style={{ fontSize: '0.7rem', color: '#cbd5e1', marginTop: '0.5rem', textAlign: 'right' }}>
-                      {new Date(noti.updated_at).toLocaleDateString('ko-KR')}
+                      {new Date(noti.created_at).toLocaleDateString('ko-KR')}
                     </div>
                   </Link>
                 ))
