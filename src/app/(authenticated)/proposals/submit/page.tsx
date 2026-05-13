@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import RichTextEditor from '@/components/RichTextEditor';
 
 function ProposalSubmitForm() {
   const router = useRouter();
@@ -40,6 +41,8 @@ function ProposalSubmitForm() {
     docsUrl: '',
     description: '',
     status: '',
+    articleType: '',
+    targetMonth: new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0'),
     discussions: [] as any[]
   });
 
@@ -96,6 +99,8 @@ function ProposalSubmitForm() {
               docsUrl: body.docsUrl || '',
               description: data.description || '',
               status: data.status,
+              articleType: body.articleType || '',
+              targetMonth: body.targetMonth || (new Date(data.created_at).getFullYear() + '-' + String(new Date(data.created_at).getMonth() + 1).padStart(2, '0')),
               discussions: discussions
             });
           } catch(e) {}
@@ -215,8 +220,12 @@ function ProposalSubmitForm() {
 
     const { data: { user } } = await supabase.auth.getUser();
     
+    const crewCount = formData.crew ? formData.crew.split(',').map(s=>s.trim()).filter(Boolean).length : 0;
+    const computedArticleType = crewCount > 1 ? '팀기사' : '개인기사';
+
     const contentBody = {
       ...formData,
+      articleType: computedArticleType,
       authorEmail: user?.email,
       isDraft
     };
@@ -303,14 +312,18 @@ function ProposalSubmitForm() {
             📌 기본 정보
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
               <div className="flex-col gap-2">
                 <label style={{ fontSize: '0.9rem', fontWeight: 600, color: '#475569' }}>제목 (가제) <span style={{color: '#ef4444'}}>*</span></label>
-                <input type="text" name="title" value={formData.title} onChange={handleChange} placeholder="예: 봄맞이 캠퍼스 투어" required disabled={isReadOnly || isSubmitting} style={{ border: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }} />
+                <input type="text" name="title" value={formData.title} onChange={handleChange} placeholder="예: 봄맞이 캠퍼스 투어" required disabled={isReadOnly || isSubmitting} style={{ border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '8px' }} />
               </div>
               <div className="flex-col gap-2">
                 <label style={{ fontSize: '0.9rem', fontWeight: 600, color: '#475569' }}>작성자 <span style={{color: '#ef4444'}}>*</span></label>
-                <input type="text" name="authorName" value={formData.authorName} onChange={handleChange} placeholder="내 정보 자동으로 불러옴" required disabled={isReadOnly || isSubmitting} style={{ border: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }} />
+                <input type="text" name="authorName" value={formData.authorName} onChange={handleChange} placeholder="내 정보 자동으로 불러옴" required disabled={isReadOnly || isSubmitting} style={{ border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '8px' }} />
+              </div>
+              <div className="flex-col gap-2">
+                <label style={{ fontSize: '0.9rem', fontWeight: 600, color: '#475569' }}>대상 월 (콘텐츠 반영월) <span style={{color: '#ef4444'}}>*</span></label>
+                <input type="month" name="targetMonth" value={formData.targetMonth} onChange={handleChange} required disabled={isReadOnly || isSubmitting} style={{ border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '8px' }} />
               </div>
             </div>
             
@@ -488,17 +501,35 @@ function ProposalSubmitForm() {
                 
                 <div className="flex-col gap-2">
                   <label style={{ fontSize: '0.9rem', fontWeight: 600, color: '#475569' }}>취지</label>
-                  <textarea name="intent" value={formData.intent} onChange={handleChange} placeholder="콘텐츠 취지를 작성해주세요." rows={3} disabled={isReadOnly || isSubmitting} style={{ border: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }} />
+                  <RichTextEditor 
+                    value={formData.intent} 
+                    onChange={(val) => setFormData({...formData, intent: val})} 
+                    placeholder="콘텐츠 취지를 작성해주세요. (이미지 붙여넣기 가능)" 
+                    disabled={isReadOnly || isSubmitting}
+                    minHeight="100px"
+                  />
                 </div>
                 
                 <div className="flex-col gap-2">
                   <label style={{ fontSize: '0.9rem', fontWeight: 600, color: '#475569' }}>주요 내용 (아이템/구성 요약)</label>
-                  <textarea name="contentBody" value={formData.contentBody} onChange={handleChange} placeholder="기획안의 핵심 내용을 작성해주세요." rows={5} disabled={isReadOnly || isSubmitting} style={{ border: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }} />
+                  <RichTextEditor 
+                    value={formData.contentBody} 
+                    onChange={(val) => setFormData({...formData, contentBody: val})} 
+                    placeholder="기획안의 핵심 내용을 작성해주세요. (이미지 붙여넣기 가능)" 
+                    disabled={isReadOnly || isSubmitting}
+                    minHeight="150px"
+                  />
                 </div>
                 
                 <div className="flex-col gap-2">
                   <label style={{ fontSize: '0.9rem', fontWeight: 600, color: '#475569' }}>구성안</label>
-                  <textarea name="composition" value={formData.composition} onChange={handleChange} placeholder="세부적인 구성안을 적어주세요." rows={6} disabled={isReadOnly || isSubmitting} style={{ border: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }} />
+                  <RichTextEditor 
+                    value={formData.composition} 
+                    onChange={(val) => setFormData({...formData, composition: val})} 
+                    placeholder="세부적인 구성안을 적어주세요. (이미지 붙여넣기 가능, URL 복사 시 자동 링크)" 
+                    disabled={isReadOnly || isSubmitting}
+                    minHeight="200px"
+                  />
                 </div>
                 
                 <div className="flex-col gap-2">

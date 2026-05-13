@@ -254,7 +254,8 @@ function FinalSubmitForm() {
       desiredDate: formData.desiredDate,
       discussions: formData.discussions,
       uploadedFileUrl: formData.uploadedFileUrl,
-      uploadedFileName: formData.uploadedFileName
+      uploadedFileName: formData.uploadedFileName,
+      finalSubmittedAt: bodyData.finalSubmittedAt || new Date().toISOString()
     };
 
     const { error } = await supabase.from('contents')

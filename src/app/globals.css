@@ -207,3 +207,11 @@ table tbody tr:hover {
 .hover-scale:active {
   transform: scale(0.95);
 }
+
+.rich-editor-content img,
+.rich-text-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 0.5rem 0;
+}
