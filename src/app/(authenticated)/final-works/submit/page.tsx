@@ -243,7 +243,7 @@ function FinalSubmitForm() {
     setIsSubmitting(true);
 
     const { data: current } = await supabase.from('contents').select('content_body').eq('id', formData.proposalId).single();
-    let bodyData = {};
+    let bodyData: any = {};
     try {
       if (current?.content_body) bodyData = JSON.parse(current.content_body);
     } catch(e) {}
