@@ -80,7 +80,8 @@ export default function ContentsLayout({
   openModalId,
   modalOnly = false,
   onModalClose,
-  searchQuery
+  searchQuery,
+  pageTitle
 }: { 
   initialContents?: ContentItem[], 
   currentUserEmail?: string | null,
@@ -88,7 +89,8 @@ export default function ContentsLayout({
   openModalId?: number,
   modalOnly?: boolean,
   onModalClose?: () => void,
-  searchQuery?: string
+  searchQuery?: string,
+  pageTitle?: string
 }) {
   const router = useRouter();
   const { openProposalModal, openFinalWorkModal } = useModal();
@@ -989,7 +991,7 @@ export default function ContentsLayout({
                   onClick={() => setShowMonthDropdown(!showMonthDropdown)}
                   style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, color: '#0f172a', whiteSpace: 'nowrap', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
                 >
-                  {selectedMonth}월 콘텐츠 목록
+                  {pageTitle ? `${pageTitle} (${selectedMonth}월)` : `${selectedMonth}월 콘텐츠 목록`}
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: showMonthDropdown ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </h2>
                 

@@ -11,6 +11,7 @@ import OtherProposalsCarousel from "@/components/OtherProposalsCarousel";
 import NoticeList from "@/components/NoticeList";
 import FinalDeadlineCarousel from "@/components/FinalDeadlineCarousel";
 import ModalLink from '@/components/ModalLink';
+import { isTraineeContent } from "@/utils/trainee";
 
 
 export const dynamic = 'force-dynamic';
@@ -82,37 +83,40 @@ async function DashboardPageContent({ searchParams }: PageProps) {
   const finalDDay = calcDDay(deadlines.finalDeadline);
 
   const dbNotices = (contents || []).filter(c => c.content_type === 'NOTICE');
-  const rawContents = (contents || []).filter(c => c.content_type !== 'NOTICE').map(item => {
-    let emailInJson = '';
-    let crewString = '';
-    let bodyObj: any = {};
-    try {
-      if ((item as any).content_body && (item as any).content_body.startsWith('{')) {
-        bodyObj = JSON.parse((item as any).content_body);
-        emailInJson = bodyObj.authorEmail || '';
-        if (typeof bodyObj.crew === 'string') {
-          crewString = bodyObj.crew;
-        } else if (Array.isArray(bodyObj.crew)) {
-          crewString = bodyObj.crew.map((c: any) => c.name || '').join(',');
+  const rawContents = (contents || [])
+    .filter(c => c.content_type !== 'NOTICE')
+    .map(item => {
+      let emailInJson = '';
+      let crewString = '';
+      let bodyObj: any = {};
+      try {
+        if ((item as any).content_body && (item as any).content_body.startsWith('{')) {
+          bodyObj = JSON.parse((item as any).content_body);
+          emailInJson = bodyObj.authorEmail || '';
+          if (typeof bodyObj.crew === 'string') {
+            crewString = bodyObj.crew;
+          } else if (Array.isArray(bodyObj.crew)) {
+            crewString = bodyObj.crew.map((c: any) => c.name || '').join(',');
+          }
         }
-      }
-    } catch(e) {}
-    
-    const isAuthor = user && (emailInJson === userEmail || item.author_name === userEmail || item.author_name === realName || (realName && item.author_name?.includes(realName)));
-    const isCrew = user && realName && crewString.includes(realName);
-    const isMine = !!(isAuthor || isCrew);
-    return { 
-      ...item, 
-      parsedPublishDate: null, 
-      isMine, 
-      parsedCrew: crewString,
-      articleType: bodyObj.articleType || '',
-      docsUrl: bodyObj.docsUrl || '',
-      targetMonth: bodyObj.targetMonth || '',
-      desiredDate: bodyObj.desiredDate || '',
-      finalSubmittedAt: bodyObj.finalSubmittedAt || '',
-    };
-  });
+      } catch(e) {}
+      
+      const isAuthor = user && (emailInJson === userEmail || item.author_name === userEmail || item.author_name === realName || (realName && item.author_name?.includes(realName)));
+      const isCrew = user && realName && crewString.includes(realName);
+      const isMine = !!(isAuthor || isCrew);
+      return { 
+        ...item, 
+        parsedPublishDate: null, 
+        isMine, 
+        parsedCrew: crewString,
+        articleType: bodyObj.articleType || '',
+        docsUrl: bodyObj.docsUrl || '',
+        targetMonth: bodyObj.targetMonth || '',
+        desiredDate: bodyObj.desiredDate || '',
+        finalSubmittedAt: bodyObj.finalSubmittedAt || '',
+      };
+    })
+    .filter(item => !isTraineeContent(item));
 
   const myContents = rawContents.filter(i => i.isMine);
 

@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import AdminStatusManager from "@/components/AdminStatusManager";
 import ModalLink from '@/components/ModalLink';
-
+import { isTraineeContent } from "@/utils/trainee";
 
 type PageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -36,29 +36,31 @@ export default async function ProposalsListPage({ searchParams }: PageProps) {
   const currentMonth = currentDate.getMonth() + 1;
   const currentYear = currentDate.getFullYear();
 
-  const processedContents = (contents || []).map(item => {
-    let emailInJson = '';
-    let crewString = '';
-    try {
-      if ((item as any).content_body && (item as any).content_body.startsWith('{')) {
-        const obj = JSON.parse((item as any).content_body);
-        emailInJson = obj.authorEmail || '';
-        if (typeof obj.crew === 'string') {
-          crewString = obj.crew;
-        } else if (Array.isArray(obj.crew)) {
-          crewString = obj.crew.map((c: any) => c.name || '').join(',');
+  const processedContents = (contents || [])
+    .map(item => {
+      let emailInJson = '';
+      let crewString = '';
+      try {
+        if ((item as any).content_body && (item as any).content_body.startsWith('{')) {
+          const obj = JSON.parse((item as any).content_body);
+          emailInJson = obj.authorEmail || '';
+          if (typeof obj.crew === 'string') {
+            crewString = obj.crew;
+          } else if (Array.isArray(obj.crew)) {
+            crewString = obj.crew.map((c: any) => c.name || '').join(',');
+          }
         }
-      }
-    } catch(e) {}
-    
-    const isAuthor = user && (emailInJson === userEmail || 
-                           item.author_name === userEmail || 
-                           item.author_name === realName ||
-                           (realName && item.author_name?.includes(realName)));
-    const isCrew = user && realName && crewString.includes(realName);
-    const isMine = isAuthor || isCrew;
-    return { ...item, isMine, isAuthor, isCrew };
-  });
+      } catch(e) {}
+      
+      const isAuthor = user && (emailInJson === userEmail || 
+                             item.author_name === userEmail || 
+                             item.author_name === realName ||
+                             (realName && item.author_name?.includes(realName)));
+      const isCrew = user && realName && crewString.includes(realName);
+      const isMine = isAuthor || isCrew;
+      return { ...item, isMine, isAuthor, isCrew };
+    })
+    .filter(item => !isTraineeContent(item));
 
   let monthContents = processedContents.filter(item => {
     const itemDate = new Date(new Date(item.created_at).toLocaleString("en-US", {timeZone: "Asia/Seoul"}));

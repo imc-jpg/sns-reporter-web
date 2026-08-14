@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
+import { isTraineeContent } from "@/utils/trainee";
 
 export default async function FinalWorksListPage() {
   const supabase = await createClient();
@@ -56,7 +57,8 @@ export default async function FinalWorksListPage() {
     const isMine = isAuthor || isCrew;
 
     return { ...item, isDraft, desiredDate, isMine, isAuthor, isCrew };
-  }).filter(item => {
+  }).filter(item => !isTraineeContent(item))
+  .filter(item => {
     const itemDate = new Date(new Date(item.created_at).toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
     return itemDate.getMonth() + 1 === currentMonth && itemDate.getFullYear() === currentYear;
   }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());

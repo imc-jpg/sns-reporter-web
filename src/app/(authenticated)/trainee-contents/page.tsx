@@ -1,8 +1,12 @@
 import { createClient } from "@/utils/supabase/server";
 import ContentsLayout from "@/components/ContentsLayout";
 import { isTraineeContent } from "@/utils/trainee";
+import { Suspense } from 'react';
+import Loading from '../loading';
 
-async function ContentsPageContent({ searchParams }: { searchParams: { openModalId?: string } }) {
+export const dynamic = 'force-dynamic';
+
+async function TraineeContentsPageContent({ searchParams }: { searchParams: { openModalId?: string } }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const userEmail = user?.email || null;
@@ -15,7 +19,7 @@ async function ContentsPageContent({ searchParams }: { searchParams: { openModal
     }
   }
 
-  // Fetch contents without heavy content_body and paginated to 50 items
+  // Fetch contents from DB
   const { data: dbContents } = await supabase
     .from('contents')
     .select('id, title, author_name, team, content_type, status, created_at, final_url, target_date, description, keywords, intent, feedback_comment')
@@ -24,10 +28,12 @@ async function ContentsPageContent({ searchParams }: { searchParams: { openModal
     .neq('content_type', 'NOTICE')
     .neq('status', 'draft')
     .order('created_at', { ascending: false })
-    .range(0, 49);
+    .range(0, 99);
+    
   const contents = (dbContents || []) as any[];
-  // Filter out Trainee (수습 단원 / 25기) contents from regular contents page
-  const processedContents = (contents || [])
+
+  // Process and filter ONLY Trainee (수습 단원 / 25기) contents
+  const processedContents = contents
     .map(item => {
       let emailInJson = '';
       let crewString = '';
@@ -62,25 +68,23 @@ async function ContentsPageContent({ searchParams }: { searchParams: { openModal
         finalSubmittedAt: bodyObj.finalSubmittedAt || '',
       };
     })
-    .filter(item => !isTraineeContent(item));
+    .filter(item => isTraineeContent(item));
 
   return (
     <ContentsLayout 
       initialContents={processedContents} 
       currentUserEmail={userEmail} 
       currentUserName={realName} 
+      pageTitle="전체 콘텐츠(수습 단원용)"
       openModalId={searchParams.openModalId ? parseInt(searchParams.openModalId, 10) : undefined}
     />
   );
 }
 
-import { Suspense } from 'react';
-import Loading from '../loading';
-
-export default function ContentsPage({ searchParams }: any) {
+export default function TraineeContentsPage({ searchParams }: any) {
   return (
     <Suspense fallback={<Loading />}>
-      <ContentsPageContent searchParams={searchParams} />
+      <TraineeContentsPageContent searchParams={searchParams} />
     </Suspense>
   );
 }
