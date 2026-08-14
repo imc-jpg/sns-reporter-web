@@ -75,7 +75,8 @@ async function TraineeContentsPageContent({ searchParams }: { searchParams: { op
       initialContents={processedContents} 
       currentUserEmail={userEmail} 
       currentUserName={realName} 
-      pageTitle="전체 콘텐츠(수습 단원용)"
+      pageTitle="수습 단원 콘텐츠"
+      isTraineeMode={true}
       openModalId={searchParams.openModalId ? parseInt(searchParams.openModalId, 10) : undefined}
     />
   );

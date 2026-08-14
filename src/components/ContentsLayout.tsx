@@ -81,7 +81,8 @@ export default function ContentsLayout({
   modalOnly = false,
   onModalClose,
   searchQuery,
-  pageTitle
+  pageTitle,
+  isTraineeMode = false
 }: { 
   initialContents?: ContentItem[], 
   currentUserEmail?: string | null,
@@ -90,11 +91,20 @@ export default function ContentsLayout({
   modalOnly?: boolean,
   onModalClose?: () => void,
   searchQuery?: string,
-  pageTitle?: string
+  pageTitle?: string,
+  isTraineeMode?: boolean
 }) {
   const router = useRouter();
   const { openProposalModal, openFinalWorkModal } = useModal();
   const supabase = createClient();
+
+  const [selectedGen, setSelectedGen] = useState<string>('25기');
+
+  const getGen = (item: any) => {
+    const text = `${item.author_name || ''} ${item.keywords || ''} ${item.title || ''} ${item.parsedCrew || ''}`;
+    const m = text.match(/(\d{2})기/);
+    return m ? `${m[1]}기` : '25기';
+  };
 
   const HighlightText = ({ text, query }: { text: string, query?: string }) => {
     if (!query || !text) return <>{text}</>;
@@ -787,14 +797,20 @@ export default function ContentsLayout({
   const displayContents = useMemo(() => {
     let result = [...contentsList];
 
-    // Filter by Selected Month & Year
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const monthPrefix = `${selectedYear}-${pad(selectedMonth)}`;
-    result = result.filter(item => {
-      const dateStr = item.created_at ? item.created_at.split('T')[0] : '';
-      const cMonth = item.targetMonth || dateStr.substring(0, 7);
-      return cMonth === monthPrefix;
-    });
+    if (isTraineeMode) {
+      if (selectedGen !== 'ALL') {
+        result = result.filter(item => getGen(item) === selectedGen);
+      }
+    } else {
+      // Filter by Selected Month & Year
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const monthPrefix = `${selectedYear}-${pad(selectedMonth)}`;
+      result = result.filter(item => {
+        const dateStr = item.created_at ? item.created_at.split('T')[0] : '';
+        const cMonth = item.targetMonth || dateStr.substring(0, 7);
+        return cMonth === monthPrefix;
+      });
+    }
 
     if (filterByMine) {
       result = result.filter(item => item.isMine);
@@ -819,7 +835,7 @@ export default function ContentsLayout({
       });
     }
     return result;
-  }, [contentsList, filterByMine, filterType, sortConfig, selectedYear, selectedMonth]);
+  }, [contentsList, filterByMine, filterType, sortConfig, selectedYear, selectedMonth, selectedGen, isTraineeMode]);
 
   const groupedContents = useMemo(() => {
      if (sortConfig) {
@@ -827,16 +843,28 @@ export default function ContentsLayout({
      }
      const groups: Record<string, ContentItem[]> = {};
      displayContents.forEach(item => {
-        let monthStr = item.targetMonth;
-        if (!monthStr) {
-          const d = new Date(item.created_at);
-          monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (isTraineeMode) {
+          const genKey = `${getGen(item)} 수습 단원 콘텐츠`;
+          if (!groups[genKey]) groups[genKey] = [];
+          groups[genKey].push(item);
+        } else {
+          let monthStr = item.targetMonth;
+          if (!monthStr) {
+            const d = new Date(item.created_at);
+            monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          }
+          const [y, m] = monthStr.split('-');
+          const groupKey = `${y.slice(2)}-${parseInt(m, 10)}`;
+          if (!groups[groupKey]) groups[groupKey] = [];
+          groups[groupKey].push(item);
         }
-        const [y, m] = monthStr.split('-');
-        const groupKey = `${y.slice(2)}-${parseInt(m, 10)}`;
-        if (!groups[groupKey]) groups[groupKey] = [];
-        groups[groupKey].push(item);
      });
+
+     if (isTraineeMode) {
+       const sortedKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+       return { groups, sortedKeys };
+     }
+
      // Sort keys descending (e.g. 26-1 -> 25-12 -> 25-11)
      const sortedKeys = Object.keys(groups).sort((a, b) => {
          const [yA, mA] = a.split('-').map(Number);
@@ -845,7 +873,7 @@ export default function ContentsLayout({
          return mB - mA;
      });
      return { groups, sortedKeys };
-  }, [displayContents]);
+  }, [displayContents, isTraineeMode]);
 
   const getTypeStyle = (typeStr: string) => {
     switch(typeStr) {
@@ -975,11 +1003,18 @@ export default function ContentsLayout({
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button 
                 onClick={() => {
-                  let m = selectedMonth - 1;
-                  let y = selectedYear;
-                  if (m < 1) { m = 12; y--; }
-                  setSelectedMonth(m);
-                  setSelectedYear(y);
+                  if (isTraineeMode) {
+                    const gens = ['25기', '26기', '27기', 'ALL'];
+                    const idx = gens.indexOf(selectedGen);
+                    const prevIdx = idx > 0 ? idx - 1 : gens.length - 1;
+                    setSelectedGen(gens[prevIdx]);
+                  } else {
+                    let m = selectedMonth - 1;
+                    let y = selectedYear;
+                    if (m < 1) { m = 12; y--; }
+                    setSelectedMonth(m);
+                    setSelectedYear(y);
+                  }
                 }}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center' }}
               >
@@ -991,61 +1026,102 @@ export default function ContentsLayout({
                   onClick={() => setShowMonthDropdown(!showMonthDropdown)}
                   style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, color: '#0f172a', whiteSpace: 'nowrap', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
                 >
-                  {pageTitle ? `${pageTitle} (${selectedMonth}월)` : `${selectedMonth}월 콘텐츠 목록`}
+                  {isTraineeMode 
+                    ? (selectedGen === 'ALL' ? '전체 수습 단원 콘텐츠' : `${selectedGen} 수습 단원 콘텐츠`)
+                    : (pageTitle ? `${pageTitle} (${selectedMonth}월)` : `${selectedMonth}월 콘텐츠 목록`)}
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: showMonthDropdown ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </h2>
                 
-                {/* Month Dropdown Grid */}
+                {/* Month or Gen Dropdown Grid */}
                 {showMonthDropdown && (
                   <>
                     <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setShowMonthDropdown(false)} />
                     <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '12px', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '20px', boxShadow: '0 10px 40px rgba(0,0,0,0.1)', zIndex: 50, width: '240px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                        <button 
-                          onClick={() => setSelectedYear(prev => prev - 1)}
-                          style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', color: '#64748b', borderRadius: '8px', padding: '6px', display: 'flex' }}
-                        >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                        </button>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>{selectedYear}년</div>
-                        <button 
-                          onClick={() => setSelectedYear(prev => prev + 1)}
-                          style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', color: '#64748b', borderRadius: '8px', padding: '6px', display: 'flex' }}
-                        >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        </button>
-                      </div>
-                      
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                        {[...Array(12)].map((_, i) => {
-                          const m = i + 1;
-                          const isSelected = selectedMonth === m;
-                          return (
-                            <button
-                              key={m}
-                              onClick={() => {
-                                setSelectedMonth(m);
-                                setShowMonthDropdown(false);
-                              }}
-                              style={{
-                                padding: '12px 0',
-                                border: 'none',
-                                borderRadius: '10px',
-                                backgroundColor: isSelected ? '#1e3a8a' : 'transparent',
-                                color: isSelected ? 'white' : '#475569',
-                                fontWeight: isSelected ? 800 : 600,
-                                fontSize: '0.95rem',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                              }}
-                              onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = '#f1f5f9' }}
-                              onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent' }}
+                      {isTraineeMode ? (
+                        <div>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#64748b', marginBottom: '12px' }}>수습기수 선택</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {['25기', '26기', '27기', 'ALL'].map(gen => {
+                              const isSelected = selectedGen === gen;
+                              return (
+                                <button
+                                  key={gen}
+                                  onClick={() => {
+                                    setSelectedGen(gen);
+                                    setShowMonthDropdown(false);
+                                  }}
+                                  style={{
+                                    padding: '10px 14px',
+                                    border: 'none',
+                                    borderRadius: '10px',
+                                    backgroundColor: isSelected ? '#1e3a8a' : '#f8fafc',
+                                    color: isSelected ? 'white' : '#334155',
+                                    fontWeight: isSelected ? 800 : 600,
+                                    fontSize: '0.9rem',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between'
+                                  }}
+                                >
+                                  <span>{gen === 'ALL' ? '전체 수습기수 보기' : `${gen} 수습 단원`}</span>
+                                  {isSelected && <span>✓</span>}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <button 
+                              onClick={() => setSelectedYear(prev => prev - 1)}
+                              style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', color: '#64748b', borderRadius: '8px', padding: '6px', display: 'flex' }}
                             >
-                              {m}월
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                             </button>
-                          );
-                        })}
-                      </div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>{selectedYear}년</div>
+                            <button 
+                              onClick={() => setSelectedYear(prev => prev + 1)}
+                              style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', color: '#64748b', borderRadius: '8px', padding: '6px', display: 'flex' }}
+                            >
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </button>
+                          </div>
+                          
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                            {[...Array(12)].map((_, i) => {
+                              const m = i + 1;
+                              const isSelected = selectedMonth === m;
+                              return (
+                                <button
+                                  key={m}
+                                  onClick={() => {
+                                    setSelectedMonth(m);
+                                    setShowMonthDropdown(false);
+                                  }}
+                                  style={{
+                                    padding: '12px 0',
+                                    border: 'none',
+                                    borderRadius: '10px',
+                                    backgroundColor: isSelected ? '#1e3a8a' : 'transparent',
+                                    color: isSelected ? 'white' : '#475569',
+                                    fontWeight: isSelected ? 800 : 600,
+                                    fontSize: '0.95rem',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                  }}
+                                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = '#f1f5f9' }}
+                                  onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent' }}
+                                >
+                                  {m}월
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </>
+                      )}
                     </div>
                   </>
                 )}
@@ -1053,11 +1129,18 @@ export default function ContentsLayout({
 
               <button 
                 onClick={() => {
-                  let m = selectedMonth + 1;
-                  let y = selectedYear;
-                  if (m > 12) { m = 1; y++; }
-                  setSelectedMonth(m);
-                  setSelectedYear(y);
+                  if (isTraineeMode) {
+                    const gens = ['25기', '26기', '27기', 'ALL'];
+                    const idx = gens.indexOf(selectedGen);
+                    const nextIdx = idx < gens.length - 1 ? idx + 1 : 0;
+                    setSelectedGen(gens[nextIdx]);
+                  } else {
+                    let m = selectedMonth + 1;
+                    let y = selectedYear;
+                    if (m > 12) { m = 1; y++; }
+                    setSelectedMonth(m);
+                    setSelectedYear(y);
+                  }
                 }}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center' }}
               >
