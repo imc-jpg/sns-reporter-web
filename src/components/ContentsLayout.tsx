@@ -82,7 +82,7 @@ export default function ContentsLayout({
   onModalClose,
   searchQuery,
   pageTitle,
-  isTraineeMode = false
+  isTraineeMode: propsIsTraineeMode = false
 }: { 
   initialContents?: ContentItem[], 
   currentUserEmail?: string | null,
@@ -98,10 +98,12 @@ export default function ContentsLayout({
   const { openProposalModal, openFinalWorkModal } = useModal();
   const supabase = createClient();
 
+  const isTraineeMode = propsIsTraineeMode || (pageTitle ? pageTitle.includes('수습') : false);
   const [selectedGen, setSelectedGen] = useState<string>('25기');
 
   const getGen = (item: any) => {
-    const text = `${item.author_name || ''} ${item.keywords || ''} ${item.title || ''} ${item.parsedCrew || ''}`;
+    if (!item) return '25기';
+    const text = `${item.author_name || ''} ${item.keywords || ''} ${item.title || ''} ${item.parsedCrew || ''} ${item.team || ''}`;
     const m = text.match(/(\d{2})기/);
     return m ? `${m[1]}기` : '25기';
   };
@@ -844,7 +846,7 @@ export default function ContentsLayout({
      const groups: Record<string, ContentItem[]> = {};
      displayContents.forEach(item => {
         if (isTraineeMode) {
-          const genKey = `${getGen(item)} 수습 단원 콘텐츠`;
+          const genKey = `${getGen(item)} 수습 단원`;
           if (!groups[genKey]) groups[genKey] = [];
           groups[genKey].push(item);
         } else {
