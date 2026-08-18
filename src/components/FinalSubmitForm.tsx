@@ -248,6 +248,12 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
           } else {
              setIsReadOnly(current.status !== 'approved');
           }
+        } else {
+          // If the requested proposal was deleted from DB
+          delete globalFinalCache[initialId];
+          alert('선택하신 기획안이 삭제(폐기)되었거나 존재하지 않습니다. 등록 가능한 다른 기획안을 선택해주세요.');
+          setFormData(prev => ({ ...prev, proposalId: '' }));
+          setSelectedProposal(null);
         }
       }
 
