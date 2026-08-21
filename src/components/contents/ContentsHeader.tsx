@@ -16,6 +16,10 @@ interface ContentsHeaderProps {
   onDeleteSelected: () => void;
   onOpenDrafts: () => void;
   onOpenNewFinalModal: () => void;
+  pageTitle?: string;
+  isTraineeMode?: boolean;
+  selectedGen?: string;
+  onGenChange?: (gen: string) => void;
 }
 
 export default function ContentsHeader({
@@ -31,6 +35,10 @@ export default function ContentsHeader({
   onDeleteSelected,
   onOpenDrafts,
   onOpenNewFinalModal,
+  pageTitle,
+  isTraineeMode = false,
+  selectedGen = '25기',
+  onGenChange
 }: ContentsHeaderProps) {
   const [showMonthDropdown, setShowMonthDropdown] = useState(false);
 
@@ -50,6 +58,32 @@ export default function ContentsHeader({
     onYearChange(y);
   };
 
+  const handlePrev = () => {
+    if (isTraineeMode && onGenChange) {
+      const gens = ['25기', '26기', '27기', 'ALL'];
+      const idx = gens.indexOf(selectedGen);
+      const prevIdx = idx > 0 ? idx - 1 : gens.length - 1;
+      onGenChange(gens[prevIdx]);
+    } else {
+      handlePrevMonth();
+    }
+  };
+
+  const handleNext = () => {
+    if (isTraineeMode && onGenChange) {
+      const gens = ['25기', '26기', '27기', 'ALL'];
+      const idx = gens.indexOf(selectedGen);
+      const nextIdx = idx < gens.length - 1 ? idx + 1 : 0;
+      onGenChange(gens[nextIdx]);
+    } else {
+      handleNextMonth();
+    }
+  };
+
+  const titleText = isTraineeMode 
+    ? (selectedGen === 'ALL' ? '전체 수습 단원 콘텐츠' : `${selectedGen} 수습 단원 콘텐츠`)
+    : (pageTitle ? `${pageTitle} (${selectedMonth}월)` : `${selectedMonth}월 콘텐츠 목록`);
+
   return (
     <div style={{
       padding: '16px 20px',
@@ -67,9 +101,9 @@ export default function ContentsHeader({
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button 
             type="button"
-            onClick={handlePrevMonth}
+            onClick={handlePrev}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center' }}
-            title="이전 달"
+            title="이전"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
           </button>
@@ -80,64 +114,97 @@ export default function ContentsHeader({
               className="typo-h1"
               style={{ margin: 0, whiteSpace: 'nowrap', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-text-heading)' }}
             >
-              {selectedMonth}월 콘텐츠 목록
+              {titleText}
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: showMonthDropdown ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><polyline points="6 9 12 15 18 9"></polyline></svg>
             </h2>
             
-            {/* Month Dropdown Grid */}
+            {/* Dropdown Grid (Month or Generation) */}
             {showMonthDropdown && (
               <>
                 <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setShowMonthDropdown(false)} />
                 <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '12px', backgroundColor: 'var(--color-card-bg)', border: '1px solid var(--color-border)', borderRadius: '16px', padding: '20px', boxShadow: 'var(--color-card-shadow)', zIndex: 50, width: '240px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <button 
-                      type="button"
-                      onClick={() => onYearChange(selectedYear - 1)}
-                      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', cursor: 'pointer', color: 'var(--color-text-muted)', borderRadius: '8px', padding: '6px', display: 'flex' }}
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                    </button>
-                    <div className="typo-h2" style={{ margin: 0, color: 'var(--color-text-heading)' }}>{selectedYear}년</div>
-                    <button 
-                      type="button"
-                      onClick={() => onYearChange(selectedYear + 1)}
-                      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', cursor: 'pointer', color: 'var(--color-text-muted)', borderRadius: '8px', padding: '6px', display: 'flex' }}
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                    </button>
-                  </div>
-                  
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                    {[...Array(12)].map((_, i) => {
-                      const m = i + 1;
-                      const isSelected = selectedMonth === m;
-                      return (
+                  {isTraineeMode ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {['25기', '26기', '27기', 'ALL'].map(gen => (
                         <button
-                          key={m}
+                          key={gen}
                           type="button"
                           onClick={() => {
-                            onMonthChange(m);
+                            if (onGenChange) onGenChange(gen);
                             setShowMonthDropdown(false);
                           }}
                           style={{
-                            padding: '10px 0',
+                            padding: '10px 14px',
                             border: 'none',
                             borderRadius: '10px',
-                            backgroundColor: isSelected ? 'var(--color-primary, #1e3a8a)' : 'transparent',
-                            color: isSelected ? 'white' : 'var(--color-text-main)',
-                            fontWeight: isSelected ? 700 : 500,
-                            fontSize: '0.85rem',
+                            backgroundColor: selectedGen === gen ? 'var(--color-primary, #1e3a8a)' : 'transparent',
+                            color: selectedGen === gen ? 'white' : 'var(--color-text-main)',
+                            fontWeight: selectedGen === gen ? 700 : 500,
+                            fontSize: '0.9rem',
                             cursor: 'pointer',
-                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
                           }}
-                          onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--color-surface)' }}
-                          onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent' }}
                         >
-                          {m}월
+                          <span>{gen === 'ALL' ? '전체 수습기수 보기' : `${gen} 수습 단원`}</span>
+                          {selectedGen === gen && <span>✓</span>}
                         </button>
-                      );
-                    })}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                        <button 
+                          type="button"
+                          onClick={() => onYearChange(selectedYear - 1)}
+                          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', cursor: 'pointer', color: 'var(--color-text-muted)', borderRadius: '8px', padding: '6px', display: 'flex' }}
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </button>
+                        <div className="typo-h2" style={{ margin: 0, color: 'var(--color-text-heading)' }}>{selectedYear}년</div>
+                        <button 
+                          type="button"
+                          onClick={() => onYearChange(selectedYear + 1)}
+                          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', cursor: 'pointer', color: 'var(--color-text-muted)', borderRadius: '8px', padding: '6px', display: 'flex' }}
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
+                      </div>
+                      
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                        {[...Array(12)].map((_, i) => {
+                          const m = i + 1;
+                          const isSelected = selectedMonth === m;
+                          return (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => {
+                                onMonthChange(m);
+                                setShowMonthDropdown(false);
+                              }}
+                              style={{
+                                padding: '10px 0',
+                                border: 'none',
+                                borderRadius: '10px',
+                                backgroundColor: isSelected ? 'var(--color-primary, #1e3a8a)' : 'transparent',
+                                color: isSelected ? 'white' : 'var(--color-text-main)',
+                                fontWeight: isSelected ? 700 : 500,
+                                fontSize: '0.85rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                              }}
+                              onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--color-surface)' }}
+                              onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent' }}
+                            >
+                              {m}월
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
                 </div>
               </>
             )}
@@ -145,9 +212,9 @@ export default function ContentsHeader({
 
           <button 
             type="button"
-            onClick={handleNextMonth}
+            onClick={handleNext}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center' }}
-            title="다음 달"
+            title="다음"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </button>

@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import ContentsLayout from "@/components/ContentsLayout";
+import { isTraineeContent } from "@/utils/trainee";
 
 async function ContentsPageContent({ searchParams }: { searchParams: { openModalId?: string } }) {
   const supabase = await createClient();
@@ -58,7 +59,8 @@ async function ContentsPageContent({ searchParams }: { searchParams: { openModal
       targetMonth: bodyObj.targetMonth || '',
       finalSubmittedAt: bodyObj.finalSubmittedAt || '',
     };
-  });
+  })
+  .filter(item => !isTraineeContent(item));
 
   return (
     <ContentsLayout 

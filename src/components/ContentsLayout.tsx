@@ -87,7 +87,9 @@ export default function ContentsLayout({
   openModalId,
   modalOnly = false,
   onModalClose,
-  searchQuery
+  searchQuery,
+  pageTitle,
+  isTraineeMode: propsIsTraineeMode = false
 }: { 
   initialContents?: ContentItem[], 
   currentUserEmail?: string | null,
@@ -95,11 +97,23 @@ export default function ContentsLayout({
   openModalId?: number,
   modalOnly?: boolean,
   onModalClose?: () => void,
-  searchQuery?: string
+  searchQuery?: string,
+  pageTitle?: string,
+  isTraineeMode?: boolean
 }) {
   const router = useRouter();
   const { openProposalModal, openFinalWorkModal } = useModal();
   const supabase = createClient();
+
+  const isTraineeMode = propsIsTraineeMode || (pageTitle ? pageTitle.includes('수습') : false);
+  const [selectedGen, setSelectedGen] = useState<string>('25기');
+
+  const getGen = (item: any) => {
+    if (!item) return '25기';
+    const text = `${item.author_name || ''} ${item.keywords || ''} ${item.title || ''} ${item.parsedCrew || ''} ${item.team || ''}`;
+    const m = text.match(/(\d{2})기/);
+    return m ? `${m[1]}기` : '25기';
+  };
 
   const HighlightText = ({ text, query }: { text: string, query?: string }) => {
     if (!query || !text) return <>{text}</>;
@@ -982,6 +996,13 @@ export default function ContentsLayout({
   const displayContents = useMemo(() => {
     let result = [...contentsList];
 
+    if (isTraineeMode) {
+      if (selectedGen !== 'ALL') {
+        result = result.filter(item => getGen(item) === selectedGen);
+      }
+      return result;
+    }
+
     // Filter by Selected Month & Year
     const pad = (n: number) => String(n).padStart(2, '0');
     const monthPrefix = `${selectedYear}-${pad(selectedMonth)}`;
@@ -1014,7 +1035,7 @@ export default function ContentsLayout({
       });
     }
     return result;
-  }, [contentsList, filterByMine, filterType, sortConfig, selectedYear, selectedMonth]);
+  }, [contentsList, filterByMine, filterType, sortConfig, selectedYear, selectedMonth, selectedGen, isTraineeMode]);
 
   const groupedContents = useMemo(() => {
      if (sortConfig) {
@@ -1022,16 +1043,28 @@ export default function ContentsLayout({
      }
      const groups: Record<string, ContentItem[]> = {};
      displayContents.forEach(item => {
-        let monthStr = item.targetMonth;
-        if (!monthStr) {
-          const d = new Date(item.created_at);
-          monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (isTraineeMode) {
+          const genKey = `${getGen(item)} 수습 단원`;
+          if (!groups[genKey]) groups[genKey] = [];
+          groups[genKey].push(item);
+        } else {
+          let monthStr = item.targetMonth;
+          if (!monthStr) {
+            const d = new Date(item.created_at);
+            monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          }
+          const [y, m] = monthStr.split('-');
+          const groupKey = `${y.slice(2)}-${parseInt(m, 10)}`;
+          if (!groups[groupKey]) groups[groupKey] = [];
+          groups[groupKey].push(item);
         }
-        const [y, m] = monthStr.split('-');
-        const groupKey = `${y.slice(2)}-${parseInt(m, 10)}`;
-        if (!groups[groupKey]) groups[groupKey] = [];
-        groups[groupKey].push(item);
      });
+
+     if (isTraineeMode) {
+       const sortedKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+       return { groups, sortedKeys };
+     }
+
      // Sort keys descending (e.g. 26-1 -> 25-12 -> 25-11)
      const sortedKeys = Object.keys(groups).sort((a, b) => {
          const [yA, mA] = a.split('-').map(Number);
@@ -1149,6 +1182,10 @@ export default function ContentsLayout({
           onDeleteSelected={handleDeleteSelected}
           onOpenDrafts={loadUnifiedDrafts}
           onOpenNewFinalModal={() => setShowUnsubmittedModal(true)}
+          pageTitle={pageTitle}
+          isTraineeMode={isTraineeMode}
+          selectedGen={selectedGen}
+          onGenChange={setSelectedGen}
         />
 
         {/* Unified Drafts Modal Component */}
