@@ -2341,24 +2341,69 @@ return (
                               )}
                             </div>
                             
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                              <span style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--color-text-heading)' }}>완성본 공식 연결 링크</span>
-                              <div style={{ backgroundColor: 'var(--color-surface)', padding: '16px', borderRadius: '14px', fontSize: '0.85rem', wordBreak: 'break-all', fontWeight: 600, color: selectedContent.final_url ? 'var(--color-text-main)' : 'var(--color-text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {selectedContent.final_url || '등록된 완성본 링크가 없습니다.'}
-                                </span>
-                                {selectedContent.final_url && (
-                                  <a href={selectedContent.final_url} target="_blank" rel="noreferrer" style={{ marginLeft: '12px', padding: '4px 10px', backgroundColor: 'var(--color-primary, #003378)', color: 'white', borderRadius: '8px', fontSize: '0.78rem', textDecoration: 'none', fontWeight: 700 }}>
-                                    바로가기 🔗
-                                  </a>
-                                )}
-                              </div>
-                            </div>
-                            
                             {(() => {
                               const finalData = (() => { try { return JSON.parse(selectedContent.content_body || '{}'); } catch(e) { return {}; }})();
+                              const driveUrl = selectedContent.final_url || finalData.final_url || finalData.docsUrl || selectedContent.docsUrl || '';
+
                               return (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+                                <>
+                                  {/* 구글 드라이브 / 문서 연결 링크 칸 */}
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <span style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--color-text-heading)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      📂 구글 드라이브 연결 링크
+                                    </span>
+                                    <div style={{ 
+                                      backgroundColor: 'var(--color-surface, #F4F5F7)', 
+                                      border: '1px solid rgba(59, 130, 246, 0.3)', 
+                                      padding: '14px 18px', 
+                                      borderRadius: '16px', 
+                                      fontSize: '0.88rem', 
+                                      fontWeight: 600, 
+                                      display: 'flex', 
+                                      justifyContent: 'space-between', 
+                                      alignItems: 'center',
+                                      gap: '12px',
+                                      boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                                    }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                                        <DriveColorIcon className="w-5 h-5 flex-shrink-0" />
+                                        <span style={{ 
+                                          color: driveUrl ? 'var(--color-text-main)' : 'var(--color-text-muted)', 
+                                          overflow: 'hidden', 
+                                          textOverflow: 'ellipsis', 
+                                          whiteSpace: 'nowrap',
+                                          wordBreak: 'break-all'
+                                        }}>
+                                          {driveUrl || '등록된 구글 드라이브 링크가 없습니다.'}
+                                        </span>
+                                      </div>
+                                      {driveUrl && (
+                                        <a 
+                                          href={driveUrl} 
+                                          target="_blank" 
+                                          rel="noreferrer" 
+                                          style={{ 
+                                            padding: '8px 16px', 
+                                            backgroundColor: '#003378', 
+                                            color: 'white', 
+                                            borderRadius: '10px', 
+                                            fontSize: '0.82rem', 
+                                            textDecoration: 'none', 
+                                            fontWeight: 800, 
+                                            whiteSpace: 'nowrap', 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            gap: '6px',
+                                            boxShadow: '0 4px 12px rgba(0,51,120,0.25)'
+                                          }}
+                                        >
+                                          구글 드라이브 열기 🔗
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
                                   {finalData.postContent && (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                       <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-heading)' }}>본문 / 캡션 내용</span>
@@ -2395,8 +2440,9 @@ return (
                                     </div>
                                   )}
                                 </div>
-                              );
-                            })()}
+                              </>
+                            );
+                          })()}
                             
                             <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                               {(() => {
