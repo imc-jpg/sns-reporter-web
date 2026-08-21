@@ -655,31 +655,36 @@ export default function ContentDetailModal({ contentId, onClose }: ContentDetail
                         allowFullScreen
                       />
                     </div>
-                  ) : finalLink ? (
-                    <div className="bg-[#EAF2FF] dark:bg-slate-800/80 rounded-2xl p-5 flex flex-col gap-3">
-                      <div className="text-xs font-bold text-[#002454] dark:text-slate-200">🔗 등록된 완성본 결과물 링크</div>
+                  ) : null}
+
+                  {/* 구글 드라이브 / 완성본 결과물 링크 바로가기 박스 (항상 노출) */}
+                  {finalLink || bodyObj.docsUrl ? (
+                    <div className="bg-blue-50 dark:bg-slate-800/90 border border-blue-200 dark:border-slate-700 rounded-2xl p-4 flex flex-col gap-2.5 shadow-sm">
+                      <div className="text-xs font-extrabold text-[#002454] dark:text-sky-300 flex items-center gap-1.5">
+                        <span>📂</span> 구글 드라이브 및 원본 결과물 연결 링크
+                      </div>
                       <div className="flex items-center justify-between gap-3">
                         <a
-                          href={finalLink}
+                          href={finalLink || bodyObj.docsUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-sm font-bold text-[#002454] dark:text-sky-400 hover:underline truncate"
+                          className="text-xs sm:text-sm font-bold text-blue-700 dark:text-sky-400 hover:underline truncate flex-1 min-w-0"
                         >
-                          {finalLink}
+                          {finalLink || bodyObj.docsUrl}
                         </a>
                         <a
-                          href={finalLink}
+                          href={finalLink || bodyObj.docsUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="px-3 py-1.5 bg-[#002454] hover:bg-blue-900 text-white rounded-lg text-xs font-bold whitespace-nowrap transition-colors shadow-2xs"
+                          className="px-3.5 py-2 bg-[#002454] hover:bg-blue-900 text-white rounded-xl text-xs font-extrabold whitespace-nowrap transition-transform active:scale-95 shadow-md flex items-center gap-1.5"
                         >
-                          새 창에서 열기 🔗
+                          구글 드라이브 열기 🔗
                         </a>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/40 rounded-2xl text-slate-400 dark:text-slate-500 text-sm">
-                      아직 등록된 완성본 결과물이 없습니다.
+                    <div className="text-center py-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl text-slate-400 dark:text-slate-500 text-xs font-semibold">
+                      등록된 구글 드라이브 링크가 없습니다.
                     </div>
                   )}
 
