@@ -13,7 +13,7 @@ async function ContentsPageContent({ searchParams }: { searchParams: { openModal
       : Promise.resolve({ data: null }),
     supabase
       .from('contents')
-      .select('id, title, author_name, team, content_type, status, created_at, final_url, target_date, description, keywords, intent, feedback_comment')
+      .select('id, title, author_name, team, content_type, status, created_at, final_url, target_date, description, keywords, intent, feedback_comment, content_body')
       .neq('content_type', 'SYSTEM_PROFILE')
       .neq('title', 'SYSTEM_DEADLINES')
       .neq('content_type', 'NOTICE')

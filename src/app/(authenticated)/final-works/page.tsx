@@ -14,7 +14,7 @@ export default async function FinalWorksListPage() {
       : Promise.resolve({ data: null }),
     supabase
       .from('contents')
-      .select('id, title, author_name, team, content_type, status, created_at, final_url, target_date, description, keywords, intent, feedback_comment')
+      .select('id, title, author_name, team, content_type, status, created_at, final_url, target_date, description, keywords, intent, feedback_comment, content_body')
       .in('status', ['final_submitted', 'final_revision', 'completed', 'uploaded'])
       .order('created_at', { ascending: false })
       .range(0, 49)

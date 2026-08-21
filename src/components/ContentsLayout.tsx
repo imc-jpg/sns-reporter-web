@@ -1193,10 +1193,22 @@ export default function ContentsLayout({
                       const typeStyle = getTypeStyle(item.content_type, item.team);
                       const isSelected = selectedContent?.id === item.id;
                       
-                      const mainAuthor = item.author_name;
-                      const allCrew = item.parsedCrew ? item.parsedCrew.split(',').map(s => s.trim()).filter(Boolean) : [mainAuthor];
-                      const others = allCrew.filter(c => c !== mainAuthor && !mainAuthor.includes(c)).map(c => formatCrewName(c));
-                      
+                      const mainAuthor = item.author_name || '';
+                      let crewRaw = item.parsedCrew || '';
+                      if (!crewRaw && item.content_body) {
+                        try {
+                          const b = typeof item.content_body === 'string' ? JSON.parse(item.content_body) : item.content_body;
+                          if (typeof b.crew === 'string') crewRaw = b.crew;
+                          else if (Array.isArray(b.crew)) crewRaw = b.crew.map((c: any) => typeof c === 'string' ? c : c.name || '').join(',');
+                        } catch (e) {}
+                      }
+                      if (!crewRaw && item.description) {
+                        const m = item.description.match(/참여:\s*([^)]+)/);
+                        if (m) crewRaw = m[1];
+                      }
+                      const allCrew = crewRaw ? crewRaw.split(',').map(s => s.trim()).filter(Boolean) : (mainAuthor ? [mainAuthor] : []);
+                      const fullCrewDisplay = allCrew.map(c => formatCrewName(c)).join(', ');
+
                       return (
                         <div 
                           key={item.id} 
@@ -1278,20 +1290,9 @@ export default function ContentsLayout({
                             <HighlightText text={item.title} query={searchQuery} />
                           </div>
                           <div style={{ flex: '1', display: 'flex', flexDirection: 'column', minWidth: 0, justifyContent: 'center' }}>
-                            {item.articleType === '개인기사' ? (
-                              <span style={{ fontSize: '0.82rem', color: 'var(--color-text-main, #334155)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                <strong style={{ fontWeight: 600 }}>{formatCrewName(mainAuthor)}</strong>
-                              </span>
-                            ) : (
-                              <>
-                                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-text-main, #334155)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                  {item.team}
-                                </span>
-                                <span className="typo-meta" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--color-text-muted, #64748b)' }}>
-                                  <strong style={{ fontWeight: 600 }}>{formatCrewName(mainAuthor)}</strong>{others.length > 0 ? `, ${others.join(', ')}` : ''}
-                                </span>
-                              </>
-                            )}
+                            <span style={{ fontSize: '0.82rem', color: 'var(--color-text-main, #334155)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              <strong style={{ fontWeight: 600 }}>{fullCrewDisplay || formatCrewName(mainAuthor)}</strong>
+                            </span>
                           </div>
                           <div className="typo-meta" style={{ width: '60px', textAlign: 'center', color: 'var(--color-text-muted, #475569)' }}>
                             {item.articleType || '개인기사'}
