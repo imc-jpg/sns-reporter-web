@@ -11,30 +11,26 @@ async function TraineeContentsPageContent({ searchParams }: { searchParams: { op
   const { data: { user } } = await supabase.auth.getUser();
   const userEmail = user?.email || null;
   
-  let realName = user?.user_metadata?.full_name || user?.user_metadata?.name || null;
-  if (userEmail) {
-    const { data: profile } = await supabase.from('contents').select('author_name').eq('title', `PROFILE_${userEmail}`).maybeSingle();
-    if (profile?.author_name) {
-      realName = profile.author_name;
-    }
-  }
+  const [{ data: profile }, { data: dbContents }] = await Promise.all([
+    userEmail
+      ? supabase.from('contents').select('author_name').eq('title', `PROFILE_${userEmail}`).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase
+      .from('contents')
+      .select('id, title, author_name, team, content_type, status, created_at, final_url, target_date, description, keywords, intent, feedback_comment, content_body')
+      .neq('content_type', 'SYSTEM_PROFILE')
+      .neq('title', 'SYSTEM_DEADLINES')
+      .neq('content_type', 'NOTICE')
+      .neq('status', 'draft')
+      .neq('status', 'deleted')
+      .order('created_at', { ascending: false })
+      .range(0, 99)
+  ]);
 
-  // Fetch contents from DB
-  const { data: dbContents } = await supabase
-    .from('contents')
-    .select('id, title, author_name, team, content_type, status, created_at, final_url, target_date, description, keywords, intent, feedback_comment')
-    .neq('content_type', 'SYSTEM_PROFILE')
-    .neq('title', 'SYSTEM_DEADLINES')
-    .neq('content_type', 'NOTICE')
-    .neq('status', 'draft')
-    .neq('status', 'deleted')
-    .order('created_at', { ascending: false })
-    .range(0, 99);
-    
+  let realName = profile?.author_name || user?.user_metadata?.full_name || user?.user_metadata?.name || null;
   const contents = (dbContents || []) as any[];
 
-  // Process and filter ONLY Trainee (수습 단원 / 25기) contents
-  const processedContents = contents
+  const processedContents = (contents || [])
     .map(item => {
       let emailInJson = '';
       let crewString = '';
@@ -46,10 +42,18 @@ async function TraineeContentsPageContent({ searchParams }: { searchParams: { op
           if (typeof bodyObj.crew === 'string') {
             crewString = bodyObj.crew;
           } else if (Array.isArray(bodyObj.crew)) {
-            crewString = bodyObj.crew.map((c: any) => c.name || '').join(',');
+            crewString = bodyObj.crew.map((c: any) => (typeof c === 'string' ? c : c.name || '')).join(',');
           }
         }
       } catch(e) {}
+
+      if (!crewString && item.description) {
+        const match = item.description.match(/참여:\s*([^)]+)/);
+        if (match) crewString = match[1];
+      }
+      if (!crewString && item.author_name) {
+        crewString = item.author_name;
+      }
 
       const isAuthor = user && (emailInJson === userEmail || item.author_name === userEmail || 
                              item.author_name === realName ||

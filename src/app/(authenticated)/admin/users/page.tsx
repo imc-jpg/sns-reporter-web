@@ -7,8 +7,13 @@ export default async function AdminUsersPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // 간단한 접근 제어 (실제 운영 시에는 별도의 관리자 식별을 추가할 수 있습니다)
-  // if (!user) return <div>접근 권한이 없습니다.</div>;
+  // [B13] 인증 및 관리자 권한 이중 검증 (middleware 통과 후에도 서버 컴포넌트에서 재확인)
+  const isAdmin =
+    user?.user_metadata?.is_admin === true ||
+    user?.email === 'admin@admin.com';
+  if (!user || !isAdmin) {
+    return <div style={{ padding: '2rem', color: '#ef4444', fontWeight: 600 }}>접근 권한이 없습니다.</div>;
+  }
 
   const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
 
@@ -29,26 +34,26 @@ export default async function AdminUsersPage() {
   });
 
   return (
-    <div className="flex-col gap-4">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>가입된 전체 기자단 명단 (관리자)</h2>
+    <div className="flex flex-col gap-4 animate-enter">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', margin: 0 }}>가입된 전체 기자단 명단 (관리자)</h2>
       </div>
 
-      <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+      <p style={{ color: '#64748B', marginBottom: '1.25rem', fontSize: '0.88rem' }}>
         구글 계정 연동 및 이메일로 가입한 모든 회원의 정보입니다.
       </p>
 
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.95rem' }}>
+      <div className="card motion-card animate-enter stagger-1" style={{ padding: 0, overflow: 'hidden', borderRadius: '24px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: '#f9fafb' }}>
-              <th style={{ padding: '1rem', fontWeight: 500, width: '15%' }}>가입 방식</th>
-              <th style={{ padding: '1rem', fontWeight: 500, width: '30%' }}>이메일</th>
-              <th style={{ padding: '1rem', fontWeight: 500, width: '20%' }}>이름 (설정된 경우)</th>
-              <th style={{ padding: '1rem', fontWeight: 500, width: '15%' }}>소속 팀</th>
-              <th style={{ padding: '1rem', fontWeight: 500, width: '20%' }}>최초 가입일</th>
-              <th style={{ padding: '1rem', fontWeight: 500, width: '15%' }}>크루원 목록 노출</th>
-              <th style={{ padding: '1rem', fontWeight: 500, width: '15%' }}>권한 관리</th>
+            <tr style={{ borderBottom: '1px solid rgba(226, 232, 240, 0.8)', backgroundColor: 'rgba(248, 250, 252, 0.7)', backdropFilter: 'blur(10px)' }}>
+              <th style={{ padding: '1rem 1.25rem', fontWeight: 700, fontSize: '0.8rem', color: '#64748B', width: '12%' }}>가입 방식</th>
+              <th style={{ padding: '1rem 1.25rem', fontWeight: 700, fontSize: '0.8rem', color: '#64748B', width: '28%' }}>이메일</th>
+              <th style={{ padding: '1rem 1.25rem', fontWeight: 700, fontSize: '0.8rem', color: '#64748B', width: '18%' }}>이름</th>
+              <th style={{ padding: '1rem 1.25rem', fontWeight: 700, fontSize: '0.8rem', color: '#64748B', width: '12%' }}>소속 팀</th>
+              <th style={{ padding: '1rem 1.25rem', fontWeight: 700, fontSize: '0.8rem', color: '#64748B', width: '15%' }}>최초 가입일</th>
+              <th style={{ padding: '1rem 1.25rem', fontWeight: 700, fontSize: '0.8rem', color: '#64748B', width: '15%' }}>크루원 목록 노출</th>
+              <th style={{ padding: '1rem 1.25rem', fontWeight: 700, fontSize: '0.8rem', color: '#64748B', width: '15%' }}>권한 관리</th>
             </tr>
           </thead>
           <tbody>
@@ -59,27 +64,27 @@ export default async function AdminUsersPage() {
               const provider = getProviderName(u);
               
               return (
-                <tr key={u.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  <td style={{ padding: '1rem' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 8px', borderRadius: '4px', backgroundColor: provider === 'Google' ? '#e0e7ff' : '#f3f4f6', color: provider === 'Google' ? '#4f46e5' : '#4b5563', display: 'inline-block' }}>
+                <tr key={u.id} className="motion-row" style={{ borderBottom: '1px solid rgba(226, 232, 240, 0.6)', transition: 'background-color 0.15s' }}>
+                  <td style={{ padding: '1rem 1.25rem' }}>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', backgroundColor: provider === 'Google' ? 'rgba(224, 231, 255, 0.8)' : 'rgba(241, 245, 249, 0.8)', color: provider === 'Google' ? '#4338CA' : '#475569', display: 'inline-block', border: '1px solid rgba(255, 255, 255, 0.6)' }}>
                       {provider}
                     </span>
                   </td>
-                  <td style={{ padding: '1rem', fontWeight: 500 }}>{u.email}</td>
-                  <td style={{ padding: '1rem' }}>{name}</td>
-                  <td style={{ padding: '1rem' }}>
-                    <span style={{ fontWeight: 600, color: team !== '-' ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>{team}</span>
+                  <td style={{ padding: '1rem 1.25rem', fontWeight: 600, color: '#0F172A' }}>{u.email}</td>
+                  <td style={{ padding: '1rem 1.25rem', fontWeight: 600, color: '#334155' }}>{name}</td>
+                  <td style={{ padding: '1rem 1.25rem' }}>
+                    <span style={{ fontWeight: 700, color: team !== '-' ? '#002454' : '#94A3B8' }}>{team}</span>
                   </td>
-                  <td style={{ padding: '1rem', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+                  <td style={{ padding: '1rem 1.25rem', color: '#94A3B8', fontSize: '0.82rem', fontWeight: 500 }}>
                     {new Date(u.created_at).toLocaleDateString()}
                   </td>
-                  <td style={{ padding: '1rem' }}>
+                  <td style={{ padding: '1rem 1.25rem' }}>
                     <AdminVisibilityButton 
                       userId={u.id}
                       isHidden={u.user_metadata?.is_hidden_in_crew === true}
                     />
                   </td>
-                  <td style={{ padding: '1rem' }}>
+                  <td style={{ padding: '1rem 1.25rem' }}>
                     <AdminRoleButton 
                       userId={u.id} 
                       isCurrentlyAdmin={u.user_metadata?.is_admin === true}

@@ -90,21 +90,18 @@ export default function NoticeList({ dbNotices = [] }: { dbNotices?: any[] }) {
   };
 
   return (
-    <div className="card" style={{ 
+    <div className="card motion-card" style={{ 
       display: 'flex', 
       flexDirection: 'column',
       padding: '1.5rem',
       borderRadius: '24px',
       height: '400px',
-      overflow: 'hidden',
-      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.04)',
-      border: '1px solid #E2E8F0',
-      background: '#FFFFFF'
+      overflow: 'hidden'
     }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-        <h3 style={{ fontWeight: 850, fontSize: '1.1rem', color: '#1E293B', margin: 0 }}>공지사항</h3>
-        <Link href="/notices" style={{ fontSize: '0.8rem', color: '#94A3B8', textDecoration: 'none', fontWeight: 700 }}>
+        <h3 style={{ fontWeight: 900, fontSize: '1.1rem', color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>공지사항</h3>
+        <Link href="/notices" className="motion-btn" style={{ fontSize: '0.8rem', color: '#002454', textDecoration: 'none', fontWeight: 800 }}>
           전체보기 →
         </Link>
       </div>
@@ -132,13 +129,13 @@ export default function NoticeList({ dbNotices = [] }: { dbNotices?: any[] }) {
                   gap: '0.75rem', 
                   padding: '0.75rem 1rem', 
                   borderRadius: '16px', 
-                  backgroundColor: isUnread ? '#FFFBEB' : '#FFFFFF', 
-                  border: isUnread ? '1.5px solid #FDE68A' : '1px solid #E2E8F0',
-                  boxShadow: isUnread ? '0 4px 12px rgba(253, 230, 138, 0.15)' : 'none',
-                  transition: 'all 0.25s ease',
+                  backgroundColor: isUnread ? 'rgba(254, 243, 199, 0.9)' : 'rgba(255, 255, 255, 0.7)', 
+                  boxShadow: isUnread ? '0 4px 14px rgba(253, 230, 138, 0.2)' : '0 2px 8px rgba(0, 36, 84, 0.03)',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
                   position: 'relative'
                 }}
-                className="hover-scale"
+                className="motion-row motion-btn"
               >
                 {/* Category badge */}
                 <span style={{ 
@@ -157,11 +154,11 @@ export default function NoticeList({ dbNotices = [] }: { dbNotices?: any[] }) {
                 {/* Notice Title */}
                 <span style={{ 
                   fontSize: '0.88rem', 
-                  fontWeight: isUnread ? 800 : 500, 
-                  color: isUnread ? '#78350F' : '#334155', 
+                  fontWeight: isUnread ? 800 : 600, 
+                  color: isUnread ? '#78350F' : '#0F172A', 
                   overflow: 'hidden', 
                   textOverflow: 'ellipsis', 
-                  whiteSpace: 'nowrap',
+                  whiteSpace: 'nowrap', 
                   flex: 1
                 }}>
                   {notice.title}
@@ -169,7 +166,7 @@ export default function NoticeList({ dbNotices = [] }: { dbNotices?: any[] }) {
 
                 {/* Unread Exclamation Mark or Date */}
                 {isUnread ? (
-                  <div style={{
+                  <div className="animate-pulse-subtle" style={{
                     width: '20px',
                     height: '20px',
                     borderRadius: '50%',
@@ -190,7 +187,8 @@ export default function NoticeList({ dbNotices = [] }: { dbNotices?: any[] }) {
                     fontSize: '0.72rem', 
                     color: '#94A3B8', 
                     whiteSpace: 'nowrap', 
-                    flexShrink: 0 
+                    flexShrink: 0, 
+                    fontWeight: 500
                   }}>
                     {notice.date}
                   </span>
@@ -203,7 +201,8 @@ export default function NoticeList({ dbNotices = [] }: { dbNotices?: any[] }) {
 
       {selectedNotice && (
         <div 
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} 
+          className="animate-backdrop"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.55)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }} 
           onMouseDown={(e) => {
             noticeMouseDownOnBackdrop.current = (e.target === e.currentTarget);
           }}
@@ -214,20 +213,20 @@ export default function NoticeList({ dbNotices = [] }: { dbNotices?: any[] }) {
             noticeMouseDownOnBackdrop.current = false;
           }}
         >
-          <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '16px', width: '100%', maxWidth: '600px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <div className="animate-scale-in" style={{ backgroundColor: 'rgba(255, 255, 255, 0.96)', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)', padding: '2rem', borderRadius: '24px', width: '100%', maxWidth: '600px', boxShadow: '0 25px 60px rgba(0, 36, 84, 0.25)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, padding: '4px 8px', borderRadius: '6px', backgroundColor: '#f1f5f9', color: '#475569' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, padding: '4px 10px', borderRadius: '8px', backgroundColor: '#EAF2FF', color: '#002454' }}>
                   {selectedNotice.category}
                 </span>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: '#0f172a' }}>{selectedNotice.title}</h2>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 850, margin: 0, color: '#0F172A', letterSpacing: '-0.02em' }}>{selectedNotice.title}</h2>
               </div>
-              <button onClick={() => setSelectedNotice(null)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#64748b' }}>&times;</button>
+              <button onClick={() => setSelectedNotice(null)} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#94A3B8', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }} className="motion-btn hover:bg-slate-100">&times;</button>
             </div>
-            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: '0.8rem', color: '#94A3B8', marginBottom: '1.25rem', fontWeight: 600 }}>
               <span>작성일: {selectedNotice.date}</span>
             </div>
-            <div style={{ fontSize: '0.95rem', color: '#334155', lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: '400px', overflowY: 'auto' }}>
+            <div style={{ fontSize: '0.9rem', color: '#334155', lineHeight: 1.7, whiteSpace: 'pre-wrap', maxHeight: '400px', overflowY: 'auto', padding: '1.25rem', backgroundColor: 'rgba(248, 250, 252, 0.85)', borderRadius: '16px' }}>
               {selectedNotice.content_body || '내용이 없습니다.'}
             </div>
           </div>

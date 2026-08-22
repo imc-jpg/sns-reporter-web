@@ -24,11 +24,17 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  // Verify the user is authenticated via the regular client
+  // [B10] 로그인 여부 + admin 여부 모두 검증
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const isAdmin =
+    user.user_metadata?.is_admin === true ||
+    user.email === 'admin@admin.com';
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const body = await req.json();

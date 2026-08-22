@@ -23,6 +23,17 @@ export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  useEffect(() => {
+    // 자동 로그인: 이미 세션이 존재하는 경우 대시보드로 자동 이동
+    const checkSession = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        router.replace('/dashboard');
+      }
+    };
+    checkSession();
+  }, [router, supabase]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -74,37 +85,53 @@ export default function LoginPage() {
         .email-form-wrapper {
           animation: slideDown 0.25s ease-out;
         }
+        /* 좁은(모바일) 화면에서는 /mobile 셸과 같은 톤(#F4F5F7 평평한 배경)으로,
+           그 이상(PC)에서는 기존 그라디언트 배경을 그대로 유지한다 — UI/UX 진단
+           P2-3 반영. 순수 CSS 미디어쿼리로 처리해 자바스크립트 뷰포트 감지에서
+           생길 수 있는 초기 렌더링 깜빡임이 없다. */
+        .login-bg {
+          background: #F4F5F7;
+          padding-top: env(safe-area-inset-top);
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+        @media (min-width: 641px) {
+          .login-bg {
+            background: linear-gradient(135deg, #c8d8f8 0%, #dce8ff 30%, #e8f0fe 55%, #d4e4ff 80%, #b8cfff 100%);
+            background-size: 300% 300%;
+            animation: gradientShift 10s ease infinite;
+          }
+        }
+        @media (max-width: 640px) {
+          .login-decor { display: none; }
+        }
       `}</style>
 
-      <div style={{
+      <div className="login-bg" style={{
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #c8d8f8 0%, #dce8ff 30%, #e8f0fe 55%, #d4e4ff 80%, #b8cfff 100%)',
-        backgroundSize: '300% 300%',
-        animation: 'gradientShift 10s ease infinite',
         position: 'relative',
         overflow: 'hidden',
       }}>
 
-        {/* 배경 장식 원 */}
-        <div style={{
+        {/* 배경 장식 원 + 플로팅 이모지 — 모바일 폭에서는 셸의 더 평평하고 담백한
+            분위기에 맞춰 감춘다(요청 반영). */}
+        <div className="login-decor" style={{
           position: 'absolute', top: '-100px', right: '-80px',
           width: '380px', height: '380px', borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(0,52,121,0.1) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
-        <div style={{
+        <div className="login-decor" style={{
           position: 'absolute', bottom: '-60px', left: '-60px',
           width: '280px', height: '280px', borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(0,52,121,0.08) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
 
-        {/* 플로팅 이모지 */}
         {floatingItems.map((item, i) => (
-          <div key={i} style={{
+          <div key={i} className="login-decor" style={{
             position: 'absolute',
             top: item.top,
             bottom: (item as any).bottom,
@@ -203,7 +230,7 @@ export default function LoginPage() {
                   gap: '0.9rem',
                   width: '100%',
                   padding: '1.05rem 1.25rem',
-                  background: 'linear-gradient(135deg, #003479 0%, #1a56c4 100%)',
+                  background: 'linear-gradient(135deg, #002454 0%, #003378 100%)',
                   border: 'none',
                   borderRadius: '16px',
                   fontWeight: 800, fontSize: '1rem',

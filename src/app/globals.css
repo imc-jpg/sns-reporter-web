@@ -1,76 +1,379 @@
+/* Pretendard는 여기서 @import로 불러오지 않는다 — CSS @import는 브라우저가 이
+   stylesheet를 전부 내려받아 파싱하기 전까지 그 안의 폰트 URL 자체를 알 수 없어
+   폰트 요청이 늦게 시작되고(렌더 블로킹), preconnect/preload 최적화도 못 받는다.
+   대신 layout.tsx의 <head>에 <link rel="preconnect">+ <link rel="stylesheet">로
+   직접 걸어 HTML 파싱과 동시에 조기 발견되도록 했다. */
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+/* 1차 감사 6번 — 터치 기기는 탭 후에도 :hover 상태가 그대로 남아있는 "고착
+   호버" 문제가 있어, hover:는 실제 마우스 포인터가 있는 환경(hover:hover and
+   pointer:fine)에서만 걸리도록 게이트가 필요하다. 기존 hover: 클래스 전체를
+   치환하는 대신 hover-fine:라는 새 variant를 추가하고, 앞으로 이 접두사를
+   쓰도록 하는 방식 — 기존 hover:는 그대로 남아있어도 되는 곳(터치 기기에서도
+   문제없는 색상 변화 등)까지 굳이 바꾸지 않아도 된다. */
+@custom-variant hover-fine {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+/* animate-in, fade-in, slide-in-from-* 계열, zoom-in-* 계열, duration-* 계열
+   유틸리티를 제공하는 플러그인 — 이게 실제로 설치·등록되어 있지 않은 채로 모바일
+   앱 전역에서 계속 쓰이고 있었다(클래스는 붙지만 대응하는 CSS 규칙이 없어 아무
+   효과가 없었음). Tailwind v4는 JS 플러그인을 이 @plugin 지시어로 등록한다. */
+@plugin "tailwindcss-animate";
 
 :root {
-  --color-primary: #2563eb;       /* Vibrant Blue */
-  --color-primary-hover: #1d4ed8;
-  --color-primary-light: #eff6ff; /* Light Blue background */
+  /* Figma mobile spec */
+  --font-mobile: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sf-pro: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+
+  /* Brand Primary Colors */
+  --color-brand-navy: #002454;
+  --color-brand-blue: #1A4B8C;
+  --color-brand-sky: #C0CFE4;
+  --color-brand-light: #EAF2FF;
+  --color-brand-soft: #F4F5F7;
+
+  --color-primary: #002454;
+  --color-primary-hover: #1A4B8C;
+  --color-primary-light: #EAF2FF;
   
-  --color-bg: #f8fafc;
-  --color-surface: rgba(255, 255, 255, 0.85); /* Glassmorphism base */
-  --color-border: rgba(226, 232, 240, 0.8);
+  /* Light Theme Variables */
+  --color-bg: #F4F5F7;
+  --color-surface: rgba(255, 255, 255, 0.78);
+  --color-border: rgba(226, 232, 240, 0.6);
   
-  --color-text-main: #111827;
-  --color-text-muted: #6b7280;
+  --color-text-main: #0F172A;
+  --color-text-muted: #64748B;
+  --color-text-heading: #0F172A;
+
+  --color-card-bg: rgba(255, 255, 255, 0.78);
+  --color-card-border: rgba(255, 255, 255, 0.4);
+  --color-card-shadow: 0 12px 32px -8px rgba(0, 36, 84, 0.06), 0 4px 14px -2px rgba(0, 0, 0, 0.02);
+  --color-card-inset: inset 0 1px 1px 0 rgba(255, 255, 255, 0.8);
+  --color-card-hover-border: rgba(255, 255, 255, 0.6);
+  --color-card-hover-shadow: 0 18px 42px -10px rgba(0, 36, 84, 0.10), 0 6px 18px -2px rgba(0, 0, 0, 0.04);
+
+  --header-glass-bg: rgba(255, 255, 255, 0.75);
+  --header-glass-border: rgba(226, 232, 240, 0.5);
+
+  --sidebar-glass-bg: rgba(0, 36, 84, 0.94);
+  --sidebar-text: #334155;
+  --sidebar-active-bg: linear-gradient(135deg, #002454 0%, #1A4B8C 100%);
+  --sidebar-active-text: #FFFFFF;
+
+  --input-glass-bg: rgba(255, 255, 255, 0.75);
+  --input-glass-border: rgba(226, 232, 240, 0.7);
+
+  --table-header-bg: rgba(248, 250, 252, 0.7);
+  --table-row-hover: rgba(255, 255, 255, 0.9);
+  --color-range-bg: #E6F0FF;
+
+  /* Opaque form/modal surfaces */
+  --color-panel: #FFFFFF;
+  --color-panel-alt: #F8FAFC;
+  --color-tint-info: #F0F9FF;
+  --color-tint-info-text: #0C4A6E;
+  --color-tint-accent: #EFF6FF;
+  --color-tint-accent-border: #BFDBFE;
+  --color-chip-bg: #93C5FD;
+  --color-chip-text: #1E3A8A;
+  --color-chip-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
+  --color-chip-surface: rgba(15, 23, 42, 0.05);
+  --color-tint-warning: #FFFBEB;
+  --color-tint-warning-text: #92400E;
+
+  --body-bg-gradient:
+    radial-gradient(at 0% 0%, hsla(215, 100%, 94%, 1) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(250, 100%, 96%, 1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(280, 100%, 95%, 1) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(190, 100%, 92%, 1) 0px, transparent 50%);
 
   /* Status Colors */
-  --status-pending: #9ca3af;   /* 대기-회색 */
-  --status-revision: #ef4444;  /* 수정요청-빨간색 */
-  --status-approved: #10b981;  /* 통과-초록색 */
-  --status-completed: #3b82f6; /* 최종완료-파란색 */
+  --status-pending: #94A3B8;   /* 대기 */
+  --status-revision: #EF4444;  /* 수정요청 */
+  --status-approved: #00A859;  /* 통과/승인 (완성본 그린) */
+  --status-proposal: #FFB800;  /* 기획안 옐로우 */
+  --status-completed: #002454; /* 최종완료 (네이비) */
 
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  /* 승인대기중 카드 — 상태값(대기/수정요청/승인)별 카드 배경 */
+  --status-card-default-bg: rgba(255, 255, 255, 0.7);
+  --status-card-revision-bg: rgba(254, 242, 242, 0.9);
+  --status-card-approved-bg: rgba(240, 253, 244, 0.9);
+  --status-card-revision-btn-bg: #FEE2E2;
+  --status-card-revision-btn-text: #DC2626;
+  --status-card-feedback-bg: rgba(254, 242, 242, 0.95);
+  --status-card-feedback-text: #991B1B;
+  --status-card-pending-badge-bg: rgba(255, 184, 0, 0.15);
+  --status-card-pending-badge-text: #B45309;
+
+  --platform-glyph: #FFFFFF;
+  --m-platform-glyph: #FFFFFF;
+
+  --font-family: 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* PC OS System Dark Mode Preference - Monochromatic Charcoal & Black */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.mobile-rem-base) {
+    --color-bg: #18191D;
+    --color-surface: rgba(34, 36, 41, 0.85);
+    --color-border: rgba(255, 255, 255, 0.06);
+
+    --color-text-main: #E6E7EA;
+    --color-text-muted: #9AA0AA;
+    --color-text-heading: #F2F3F5;
+
+    --color-card-bg: rgba(32, 34, 39, 0.85);
+    --color-card-border: rgba(255, 255, 255, 0.05);
+    --color-card-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.5), 0 4px 14px -2px rgba(0, 0, 0, 0.35);
+    --color-card-inset: inset 0 1px 1px 0 rgba(255, 255, 255, 0.05);
+    --color-card-hover-border: rgba(255, 255, 255, 0.1);
+    --color-card-hover-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.6), 0 6px 18px -2px rgba(0, 0, 0, 0.4);
+
+    --header-glass-bg: rgba(26, 27, 31, 0.85);
+    --header-glass-border: rgba(255, 255, 255, 0.05);
+
+    --sidebar-glass-bg: rgba(22, 23, 27, 0.96);
+    --sidebar-text: #9AA0AA;
+    --sidebar-active-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.06) 100%);
+    --sidebar-active-text: #F2F3F5;
+
+    --input-glass-bg: rgba(40, 42, 48, 0.8);
+    --input-glass-border: rgba(255, 255, 255, 0.06);
+
+    --table-header-bg: rgba(38, 40, 46, 0.75);
+    --table-row-hover: rgba(46, 48, 55, 0.7);
+    --color-range-bg: rgba(59, 130, 246, 0.2);
+
+    --platform-glyph: #000000;
+    --m-platform-glyph: #000000;
+
+    --color-panel: #202226;
+    --color-panel-alt: rgba(255, 255, 255, 0.04);
+    --color-tint-info: rgba(56, 189, 248, 0.1);
+    --color-tint-info-text: #7DD3FC;
+    --color-tint-accent: rgba(59, 130, 246, 0.14);
+    --color-tint-accent-border: rgba(96, 165, 250, 0.35);
+    --color-chip-bg: rgba(59, 130, 246, 0.28);
+    --color-chip-text: #BFDBFE;
+    --color-chip-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    --color-chip-surface: rgba(255, 255, 255, 0.1);
+    --color-tint-warning: rgba(217, 119, 6, 0.16);
+    --color-tint-warning-text: #FCD34D;
+
+    --status-card-default-bg: rgba(255, 255, 255, 0.04);
+    --status-card-revision-bg: rgba(239, 68, 68, 0.14);
+    --status-card-approved-bg: rgba(0, 168, 89, 0.14);
+    --status-card-revision-btn-bg: rgba(239, 68, 68, 0.28);
+    --status-card-revision-btn-text: #FCA5A5;
+    --status-card-feedback-bg: rgba(239, 68, 68, 0.18);
+    --status-card-feedback-text: #FCA5A5;
+    --status-card-pending-badge-bg: rgba(255, 184, 0, 0.22);
+    --status-card-pending-badge-text: #FCD34D;
+
+    --body-bg-gradient:
+      radial-gradient(at 0% 0%, hsla(0, 0%, 20%, 1) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(220, 8%, 18%, 1) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(0, 0%, 16%, 1) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(210, 6%, 15%, 1) 0px, transparent 50%);
+  }
+}
+
+/* Explicit Dark Theme Class / Attribute - Monochromatic Charcoal & Black */
+html[data-theme="dark"]:not(.mobile-rem-base), html.dark:not(.mobile-rem-base), .dark {
+  --color-bg: #18191D;
+  --color-surface: rgba(34, 36, 41, 0.85);
+  --color-border: rgba(255, 255, 255, 0.06);
+
+  --color-text-main: #E6E7EA;
+  --color-text-muted: #9AA0AA;
+  --color-text-heading: #F2F3F5;
+
+  --color-card-bg: rgba(32, 34, 39, 0.85);
+  --color-card-border: rgba(255, 255, 255, 0.05);
+  --color-card-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.5), 0 4px 14px -2px rgba(0, 0, 0, 0.35);
+  --color-card-inset: inset 0 1px 1px 0 rgba(255, 255, 255, 0.05);
+  --color-card-hover-border: rgba(255, 255, 255, 0.1);
+  --color-card-hover-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.6), 0 6px 18px -2px rgba(0, 0, 0, 0.4);
+
+  --header-glass-bg: rgba(26, 27, 31, 0.85);
+  --header-glass-border: rgba(255, 255, 255, 0.05);
+
+  --sidebar-glass-bg: rgba(22, 23, 27, 0.96);
+  --sidebar-text: #9AA0AA;
+  --sidebar-active-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.06) 100%);
+  --sidebar-active-text: #F2F3F5;
+
+  --input-glass-bg: rgba(40, 42, 48, 0.8);
+  --input-glass-border: rgba(255, 255, 255, 0.06);
+
+  --table-header-bg: rgba(38, 40, 46, 0.75);
+  --table-row-hover: rgba(46, 48, 55, 0.7);
+  --color-range-bg: rgba(59, 130, 246, 0.2);
+
+  --platform-glyph: #000000;
+  --m-platform-glyph: #000000;
+
+  --color-panel: #202226;
+  --color-panel-alt: rgba(255, 255, 255, 0.04);
+  --color-tint-info: rgba(56, 189, 248, 0.1);
+  --color-tint-info-text: #7DD3FC;
+  --color-tint-accent: rgba(59, 130, 246, 0.14);
+  --color-tint-accent-border: rgba(96, 165, 250, 0.35);
+  --color-chip-bg: rgba(59, 130, 246, 0.28);
+  --color-chip-text: #BFDBFE;
+  --color-chip-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --color-tint-warning: rgba(217, 119, 6, 0.16);
+  --color-tint-warning-text: #FCD34D;
+
+  --status-card-default-bg: rgba(255, 255, 255, 0.04);
+  --status-card-revision-bg: rgba(239, 68, 68, 0.14);
+  --status-card-approved-bg: rgba(0, 168, 89, 0.14);
+  --status-card-revision-btn-bg: rgba(239, 68, 68, 0.28);
+  --status-card-revision-btn-text: #FCA5A5;
+  --status-card-feedback-bg: rgba(239, 68, 68, 0.18);
+  --status-card-feedback-text: #FCA5A5;
+  --status-card-pending-badge-bg: rgba(255, 184, 0, 0.22);
+  --status-card-pending-badge-text: #FCD34D;
+
+  --body-bg-gradient:
+    radial-gradient(at 0% 0%, hsla(0, 0%, 20%, 1) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(220, 8%, 18%, 1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(0, 0%, 16%, 1) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(210, 6%, 15%, 1) 0px, transparent 50%);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 }
 
 html {
-  font-size: 17px; /* Scales up 1rem overall */
+  font-size: 17px;
+  color-scheme: light dark;
+}
+
+/* Mobile shell (/mobile route) is designed against Figma's 402px frame at a
+   16px rem base — the PC-wide 17px override above makes every rem-based
+   Tailwind value ~6% larger than spec, so MobileShell toggles this class on
+   <html> for as long as it's mounted. */
+html.mobile-rem-base {
+  font-size: 16px;
 }
 
 body {
   font-family: var(--font-family);
   background-color: var(--color-bg);
-  background-image: 
-    radial-gradient(at 0% 0%, hsla(215, 100%, 94%, 1) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, hsla(250, 100%, 96%, 1) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, hsla(280, 100%, 95%, 1) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, hsla(190, 100%, 92%, 1) 0px, transparent 50%);
+  background-image: var(--body-bg-gradient);
   background-attachment: fixed;
   color: var(--color-text-main);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Sidebar Link Styles */
+/* Glassmorphic 3D Pop Sidebar Link Styles */
 .sidebar-link {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-radius: 0 8px 8px 0;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.7);
-  transition: all 0.3s ease;
+  gap: 0.85rem;
+  padding: 0.8rem 1.15rem;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--sidebar-text);
+  transition: background-color 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
   text-decoration: none;
-  border-left: 4px solid transparent;
+  margin: 0.2rem 0.5rem;
+  position: relative;
+  border: 1px solid transparent;
 }
 
-.sidebar-link:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
-  transform: translateX(4px);
+@media (hover: hover) and (pointer: fine) {
+  .sidebar-link:hover {
+    background: var(--input-glass-bg);
+    color: var(--color-text-main);
+    transform: scale(1.05) translateX(6px);
+    box-shadow: 0 12px 28px -6px rgba(0, 36, 84, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+    z-index: 10;
+  }
 }
 
 .sidebar-link.active {
-  background: linear-gradient(90deg, rgba(255,255,255,0.15) 0%, transparent 100%);
-  color: white;
-  font-weight: 800;
-  border-left: 4px solid white;
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-text);
+  font-weight: 750;
+  box-shadow: 0 10px 25px -4px rgba(0, 36, 84, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  transform: scale(1.02);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sidebar-link.active:hover {
+    transform: scale(1.06) translateX(6px);
+    box-shadow: 0 14px 32px -4px rgba(0, 36, 84, 0.4);
+  }
+}
+
+/* Global Typography Scale & Hierarchy Tokens (6-Tier Hierarchy) */
+.typo-h1, .type-heading-1 {
+  font-size: 1.35rem; /* ~23px in 17px rem base */
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+  color: var(--color-text-heading);
+}
+
+.typo-h2, .type-heading-2 {
+  font-size: 1.05rem; /* ~18px */
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.typo-h3, .type-subhead {
+  font-size: 0.88rem; /* ~15px */
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.015em;
+  color: #0f172a;
+}
+
+.typo-body, .type-body {
+  font-size: 0.82rem; /* ~14px */
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: -0.01em;
+  color: #334155;
+}
+
+.typo-meta, .type-caption {
+  font-size: 0.75rem; /* ~12.5px */
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+  color: #64748b;
+}
+
+.typo-badge {
+  font-size: 0.68rem; /* ~11.5px */
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+}
+
+.pc-header-glass {
+  background: var(--header-glass-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--header-glass-border);
+  box-shadow: 0 4px 20px -2px rgba(0, 36, 84, 0.03);
 }
 
 /* Beautiful Scrollbars */
@@ -90,32 +393,40 @@ body {
   background: #94a3b8;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+/* These element-selector resets are wrapped in Tailwind's "base" layer so that
+   Tailwind utility classes (which live in the higher-priority "utilities"
+   layer) can actually override them: unlayered CSS always wins over layered
+   CSS regardless of specificity, so leaving these unlayered silently defeated
+   every background/border color utility ever applied directly to a button
+   or input element. */
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 
-button {
-  cursor: pointer;
-  border: none;
-  background: none;
-  font-family: inherit;
-}
+  button {
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: inherit;
+  }
 
-input, textarea, select {
-  font-family: inherit;
-  border: 1px solid var(--color-border);
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  width: 100%;
-  font-size: 1rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
+  input, textarea, select {
+    font-family: inherit;
+    border: 1px solid var(--color-border);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    width: 100%;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
 
-input:focus, textarea:focus, select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-light);
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(0, 36, 84, 0.45);
+  }
 }
 
 /* Base Utility Classes */
@@ -126,33 +437,820 @@ input:focus, textarea:focus, select:focus {
 }
 
 .card {
-  background-color: var(--color-surface);
-  backdrop-filter: blur(16px);
+  background: var(--color-card-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
   border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--color-card-border);
   padding: 1.5rem;
-  box-shadow: 0 15px 35px -10px rgba(15, 23, 42, 0.05), 0 5px 15px -5px rgba(15, 23, 42, 0.03);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: var(--color-card-shadow), var(--color-card-inset);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease, background-color 0.3s ease;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .card {
+    background: var(--color-surface);
+  }
 }
 
 .card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.08);
+  transform: translateY(-3px);
+  box-shadow: var(--color-card-hover-shadow), var(--color-card-inset);
+  border-color: var(--color-card-hover-border);
 }
 
+.glass-pill {
+  background: var(--input-glass-bg);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
 
-/* Vibrant Table Row Interactions */
+/* Table Row Interactions */
 table tbody tr {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 table tbody tr:hover {
-  transform: translateY(-2px) scale(1.005);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
-  background-color: #ffffff !important;
+  transform: translateY(-1.5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  background-color: var(--table-row-hover) !important;
   z-index: 10;
   position: relative;
   border-radius: 12px;
+}
+
+/* ──────────────────────────────────────────────────────────
+   Dark Mode Typography & Color System (PC OS & Toggle Compatible)
+   ────────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.mobile-rem-base) .text-slate-900,
+  :root:not([data-theme="light"]):not(.mobile-rem-base) h1,
+  :root:not([data-theme="light"]):not(.mobile-rem-base) h2,
+  :root:not([data-theme="light"]):not(.mobile-rem-base) h3,
+  :root:not([data-theme="light"]):not(.mobile-rem-base) h4 {
+    color: #F8FAFC;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) .text-slate-800 {
+    color: #F1F5F9;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) .text-slate-700 {
+    color: #E2E8F0;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) .text-slate-600 {
+    color: #94A3B8;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) .text-slate-500 {
+    color: #94A3B8;
+  }
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) .text-slate-900,
+html.dark:not(.mobile-rem-base) .text-slate-900,
+html[data-theme="dark"]:not(.mobile-rem-base) h1,
+html.dark:not(.mobile-rem-base) h1,
+html[data-theme="dark"]:not(.mobile-rem-base) h2,
+html.dark:not(.mobile-rem-base) h2,
+html[data-theme="dark"]:not(.mobile-rem-base) h3,
+html.dark:not(.mobile-rem-base) h3,
+html[data-theme="dark"]:not(.mobile-rem-base) h4,
+html.dark:not(.mobile-rem-base) h4 {
+  color: #F8FAFC;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) .text-slate-800,
+html.dark:not(.mobile-rem-base) .text-slate-800 {
+  color: #F1F5F9;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) .text-slate-700,
+html.dark:not(.mobile-rem-base) .text-slate-700 {
+  color: #E2E8F0;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) .text-slate-600,
+html.dark:not(.mobile-rem-base) .text-slate-600,
+html[data-theme="dark"]:not(.mobile-rem-base) .text-slate-500,
+html.dark:not(.mobile-rem-base) .text-slate-500 {
+  color: #94A3B8;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) ::-webkit-scrollbar-thumb,
+html.dark:not(.mobile-rem-base) ::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-color: #0F172A;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.mobile-rem-base) ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-color: #0F172A;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   Comprehensive Dark Mode Component & Surface Enhancements
+   ────────────────────────────────────────────────────────── */
+html[data-theme="dark"]:not(.mobile-rem-base) input,
+html.dark:not(.mobile-rem-base) input,
+html[data-theme="dark"]:not(.mobile-rem-base) textarea,
+html.dark:not(.mobile-rem-base) textarea,
+html[data-theme="dark"]:not(.mobile-rem-base) select,
+html.dark:not(.mobile-rem-base) select {
+  background-color: var(--input-glass-bg) !important;
+  color: #F2F3F5 !important;
+  border-color: var(--color-border) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.mobile-rem-base) input,
+  :root:not([data-theme="light"]):not(.mobile-rem-base) textarea,
+  :root:not([data-theme="light"]):not(.mobile-rem-base) select {
+    background-color: var(--input-glass-bg) !important;
+    color: #F2F3F5 !important;
+    border-color: var(--color-border) !important;
+  }
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) input::placeholder,
+html.dark:not(.mobile-rem-base) input::placeholder,
+html[data-theme="dark"]:not(.mobile-rem-base) textarea::placeholder,
+html.dark:not(.mobile-rem-base) textarea::placeholder {
+  color: #6B7280 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.mobile-rem-base) input::placeholder,
+  :root:not([data-theme="light"]):not(.mobile-rem-base) textarea::placeholder {
+    color: #6B7280 !important;
+  }
+}
+
+/* Dark mode for lists and table headers */
+html[data-theme="dark"]:not(.mobile-rem-base) .bg-white,
+html.dark:not(.mobile-rem-base) .bg-white {
+  background-color: rgba(22, 24, 29, 0.85) !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) .bg-slate-50,
+html.dark:not(.mobile-rem-base) .bg-slate-50,
+html[data-theme="dark"]:not(.mobile-rem-base) .bg-slate-100,
+html.dark:not(.mobile-rem-base) .bg-slate-100 {
+  background-color: rgba(30, 33, 40, 0.7) !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) .border-slate-200,
+html.dark:not(.mobile-rem-base) .border-slate-200,
+html[data-theme="dark"]:not(.mobile-rem-base) .border-slate-100,
+html.dark:not(.mobile-rem-base) .border-slate-100 {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* bg-white/NN, border-white/NN (Tailwind opacity-suffixed utilities) and
+   plain hardcoded white hex backgrounds are not caught by the exact-class
+   or literal-string selectors above — they stay white while nearby text
+   flips to a dark-mode-only light color, making it unreadable. */
+html[data-theme="dark"]:not(.mobile-rem-base) [class*="bg-white/"],
+html.dark:not(.mobile-rem-base) [class*="bg-white/"] {
+  background-color: rgba(28, 30, 37, 0.7) !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) [class*="border-white/"],
+html.dark:not(.mobile-rem-base) [class*="border-white/"] {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgb(234, 242, 255)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#EAF2FF" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: rgb(234, 242, 255)" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:rgb(234, 242, 255)" i] {
+  background-color: rgba(40, 42, 52, 0.85) !important;
+  color: #E5E7EB !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background:rgb(255, 255, 255)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background:#FFFFFF" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background: rgb(255, 255, 255)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgb(255, 255, 255)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#FFFFFF" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: rgb(255, 255, 255)" i],
+html.dark:not(.mobile-rem-base) [style*="background:rgb(255, 255, 255)" i],
+html.dark:not(.mobile-rem-base) [style*="background:#FFFFFF" i],
+html.dark:not(.mobile-rem-base) [style*="background: rgb(255, 255, 255)" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:rgb(255, 255, 255)" i] {
+  background-color: rgba(22, 24, 29, 0.9) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [class*="bg-white/"] {
+    background-color: rgba(28, 30, 37, 0.7) !important;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [class*="border-white/"] {
+    border-color: rgba(255, 255, 255, 0.12) !important;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background:rgb(255, 255, 255)" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background:#FFFFFF" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background: rgb(255, 255, 255)" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background-color:rgb(255, 255, 255)" i] {
+    background-color: rgba(22, 24, 29, 0.9) !important;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background-color:rgb(234, 242, 255)" i] {
+    background-color: rgba(40, 42, 52, 0.85) !important;
+    color: #E5E7EB !important;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) .bg-white {
+    background-color: rgba(22, 24, 29, 0.85) !important;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) .bg-slate-50,
+  :root:not([data-theme="light"]):not(.mobile-rem-base) .bg-slate-100 {
+    background-color: rgba(30, 33, 40, 0.7) !important;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) .border-slate-200,
+  :root:not([data-theme="light"]):not(.mobile-rem-base) .border-slate-100 {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+}
+
+.upload-card-bg {
+  background: linear-gradient(135deg, rgba(210, 225, 248, 0.88) 0%, rgba(225, 235, 250, 0.75) 100%);
+  color: #002454;
+}
+
+.proposal-card-bg {
+  background: linear-gradient(135deg, rgba(234, 242, 255, 0.92) 0%, rgba(219, 234, 254, 0.82) 100%);
+  color: #002454;
+}
+
+.final-card-bg {
+  background: linear-gradient(135deg, rgba(230, 240, 255, 0.92) 0%, rgba(214, 230, 255, 0.82) 100%);
+  color: #002454;
+}
+
+/* PC Dashboard Calendar Continuous Range Strip */
+.calendar-range-strip {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  background-color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+  z-index: 1;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) .calendar-range-strip,
+html.dark:not(.mobile-rem-base) .calendar-range-strip {
+  background-color: #E2E8F0 !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.mobile-rem-base) .upload-card-bg {
+    background: linear-gradient(135deg, rgba(28, 31, 38, 0.9) 0%, rgba(18, 20, 25, 0.85) 100%) !important;
+    color: #F2F3F5 !important;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) .proposal-card-bg {
+    background: linear-gradient(135deg, rgba(32, 35, 44, 0.9) 0%, rgba(20, 22, 28, 0.85) 100%) !important;
+    color: #F2F3F5 !important;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) .final-card-bg {
+    background: linear-gradient(135deg, rgba(22, 24, 30, 0.95) 0%, rgba(14, 15, 18, 0.92) 100%) !important;
+    color: #F2F3F5 !important;
+  }
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) .upload-card-bg,
+html.dark:not(.mobile-rem-base) .upload-card-bg {
+  background: linear-gradient(135deg, rgba(28, 31, 38, 0.9) 0%, rgba(18, 20, 25, 0.85) 100%) !important;
+  color: #F2F3F5 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.mobile-rem-base) .upload-icon-circle {
+    background-color: rgba(148, 163, 184, 0.18) !important;
+    color: #CBD5E1 !important;
+    box-shadow: none !important;
+  }
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) .upload-icon-circle,
+html.dark:not(.mobile-rem-base) .upload-icon-circle {
+  background-color: rgba(148, 163, 184, 0.18) !important;
+  color: #CBD5E1 !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) .proposal-card-bg,
+html.dark:not(.mobile-rem-base) .proposal-card-bg {
+  background: linear-gradient(135deg, rgba(32, 35, 44, 0.9) 0%, rgba(20, 22, 28, 0.85) 100%) !important;
+  color: #F2F3F5 !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) .final-card-bg,
+html.dark:not(.mobile-rem-base) .final-card-bg {
+  background: linear-gradient(135deg, rgba(22, 24, 30, 0.95) 0%, rgba(14, 15, 18, 0.92) 100%) !important;
+  color: #F2F3F5 !important;
+}
+
+.lock-overlay {
+  background-color: rgba(255, 255, 255, 0.65);
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) .lock-overlay,
+html.dark:not(.mobile-rem-base) .lock-overlay {
+  background-color: rgba(18, 20, 24, 0.78) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.mobile-rem-base) .lock-overlay {
+    background-color: rgba(18, 20, 24, 0.78) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DARK MODE — Comprehensive Inline-Style & Component Overrides
+   Targets text, labels, headings, dividers, glass surfaces,
+   and badges that use hardcoded hex/rgb inside React inline styles.
+   ═══════════════════════════════════════════════════════════ */
+
+/* --- 공통 레이블 및 제목 색상 --- */
+html[data-theme="dark"]:not(.mobile-rem-base) label,
+html.dark:not(.mobile-rem-base) label {
+  color: #D1D5DB !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) h1,
+html[data-theme="dark"]:not(.mobile-rem-base) h2,
+html[data-theme="dark"]:not(.mobile-rem-base) h3,
+html[data-theme="dark"]:not(.mobile-rem-base) h4,
+html.dark:not(.mobile-rem-base) h1,
+html.dark:not(.mobile-rem-base) h2,
+html.dark:not(.mobile-rem-base) h3,
+html.dark:not(.mobile-rem-base) h4 {
+  color: #F8FAFC !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) p,
+html.dark:not(.mobile-rem-base) p {
+  color: #CBD5E1 !important;
+}
+
+/* --- 1. 진한 본문 및 헤딩 텍스트 (#0F172A, #1E293B, #334155, #111827) --- */
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#0F172A" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #0F172A" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(15, 23, 42)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: rgb(15, 23, 42)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#111827" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #111827" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(17, 24, 39)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: rgb(17, 24, 39)" i],
+html.dark:not(.mobile-rem-base) [style*="color:#0F172A" i],
+html.dark:not(.mobile-rem-base) [style*="color: #0F172A" i],
+html.dark:not(.mobile-rem-base) [style*="color:rgb(15, 23, 42)" i],
+html.dark:not(.mobile-rem-base) [style*="color: rgb(15, 23, 42)" i],
+html.dark:not(.mobile-rem-base) [style*="color:#111827" i],
+html.dark:not(.mobile-rem-base) [style*="color: #111827" i],
+html.dark:not(.mobile-rem-base) [style*="color:rgb(17, 24, 39)" i],
+html.dark:not(.mobile-rem-base) [style*="color: rgb(17, 24, 39)" i] {
+  color: #F8FAFC !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#1E293B" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #1E293B" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(30, 41, 59)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: rgb(30, 41, 59)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#334155" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #334155" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(51, 65, 85)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: rgb(51, 65, 85)" i],
+html.dark:not(.mobile-rem-base) [style*="color:#1E293B" i],
+html.dark:not(.mobile-rem-base) [style*="color: #1E293B" i],
+html.dark:not(.mobile-rem-base) [style*="color:rgb(30, 41, 59)" i],
+html.dark:not(.mobile-rem-base) [style*="color: rgb(30, 41, 59)" i],
+html.dark:not(.mobile-rem-base) [style*="color:#334155" i],
+html.dark:not(.mobile-rem-base) [style*="color: #334155" i],
+html.dark:not(.mobile-rem-base) [style*="color:rgb(51, 65, 85)" i],
+html.dark:not(.mobile-rem-base) [style*="color: rgb(51, 65, 85)" i] {
+  color: #E2E8F0 !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#475569" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #475569" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(71, 85, 105)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: rgb(71, 85, 105)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#64748B" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #64748B" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(100, 116, 139)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: rgb(100, 116, 139)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#94A3B8" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #94A3B8" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(148, 163, 184)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: rgb(148, 163, 184)" i],
+html.dark:not(.mobile-rem-base) [style*="color:#475569" i],
+html.dark:not(.mobile-rem-base) [style*="color: #475569" i],
+html.dark:not(.mobile-rem-base) [style*="color:rgb(71, 85, 105)" i],
+html.dark:not(.mobile-rem-base) [style*="color: rgb(71, 85, 105)" i],
+html.dark:not(.mobile-rem-base) [style*="color:#64748B" i],
+html.dark:not(.mobile-rem-base) [style*="color: #64748B" i],
+html.dark:not(.mobile-rem-base) [style*="color:rgb(100, 116, 139)" i],
+html.dark:not(.mobile-rem-base) [style*="color: rgb(100, 116, 139)" i],
+html.dark:not(.mobile-rem-base) [style*="color:#94A3B8" i],
+html.dark:not(.mobile-rem-base) [style*="color: #94A3B8" i],
+html.dark:not(.mobile-rem-base) [style*="color:rgb(148, 163, 184)" i],
+html.dark:not(.mobile-rem-base) [style*="color: rgb(148, 163, 184)" i] {
+  color: #94A3B8 !important;
+}
+
+/* --- 2. 브랜드 네이비 / 블루 텍스트 (#002454, #003378, #1E3A8A, #1D4ED8, #1A4B8C, #1E40AF) --- */
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#002454" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #002454" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(0, 36, 84)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: rgb(0, 36, 84)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#003378" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #003378" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(0, 51, 120)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: rgb(0, 51, 120)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#1E3A8A" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #1E3A8A" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(30, 58, 138)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: rgb(30, 58, 138)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#1D4ED8" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #1D4ED8" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(29, 78, 216)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: rgb(29, 78, 216)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#1A4B8C" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #1A4B8C" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(26, 75, 140)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: rgb(26, 75, 140)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#1E40AF" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #1E40AF" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(30, 64, 175)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: rgb(30, 64, 175)" i],
+html.dark:not(.mobile-rem-base) [style*="color:#002454" i],
+html.dark:not(.mobile-rem-base) [style*="color: #002454" i],
+html.dark:not(.mobile-rem-base) [style*="color:rgb(0, 36, 84)" i],
+html.dark:not(.mobile-rem-base) [style*="color: rgb(0, 36, 84)" i],
+html.dark:not(.mobile-rem-base) [style*="color:#003378" i],
+html.dark:not(.mobile-rem-base) [style*="color: #003378" i],
+html.dark:not(.mobile-rem-base) [style*="color:rgb(0, 51, 120)" i],
+html.dark:not(.mobile-rem-base) [style*="color: rgb(0, 51, 120)" i],
+html.dark:not(.mobile-rem-base) [style*="color:#1E3A8A" i],
+html.dark:not(.mobile-rem-base) [style*="color: #1E3A8A" i],
+html.dark:not(.mobile-rem-base) [style*="color:rgb(30, 58, 138)" i],
+html.dark:not(.mobile-rem-base) [style*="color: rgb(30, 58, 138)" i],
+html.dark:not(.mobile-rem-base) [style*="color:#1D4ED8" i],
+html.dark:not(.mobile-rem-base) [style*="color: #1D4ED8" i],
+html.dark:not(.mobile-rem-base) [style*="color:rgb(29, 78, 216)" i],
+html.dark:not(.mobile-rem-base) [style*="color: rgb(29, 78, 216)" i],
+html.dark:not(.mobile-rem-base) [style*="color:#1A4B8C" i],
+html.dark:not(.mobile-rem-base) [style*="color: #1A4B8C" i],
+html.dark:not(.mobile-rem-base) [style*="color:rgb(26, 75, 140)" i],
+html.dark:not(.mobile-rem-base) [style*="color: rgb(26, 75, 140)" i] {
+  color: #93C5FD !important;
+}
+
+/* --- 3. 상태/뱃지 컬러 텍스트 (초록, 앰버, 오렌지, 빨강, 보라) --- */
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#059669" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #059669" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(5, 150, 105)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#15803D" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #15803D" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(21, 128, 61)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#16A34A" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #16A34A" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(22, 163, 74)" i],
+html.dark:not(.mobile-rem-base) [style*="color:#059669" i],
+html.dark:not(.mobile-rem-base) [style*="color: #059669" i],
+html.dark:not(.mobile-rem-base) [style*="color:#15803D" i],
+html.dark:not(.mobile-rem-base) [style*="color: #15803D" i],
+html.dark:not(.mobile-rem-base) [style*="color:#16A34A" i] {
+  color: #4ADE80 !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#D97706" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #D97706" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(217, 119, 6)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#B45309" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #B45309" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(180, 83, 9)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#92400E" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #92400E" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(146, 64, 14)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#78350F" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #78350F" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(120, 53, 15)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#EA580C" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #EA580C" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(234, 88, 12)" i],
+html.dark:not(.mobile-rem-base) [style*="color:#D97706" i],
+html.dark:not(.mobile-rem-base) [style*="color: #D97706" i],
+html.dark:not(.mobile-rem-base) [style*="color:#B45309" i],
+html.dark:not(.mobile-rem-base) [style*="color: #B45309" i],
+html.dark:not(.mobile-rem-base) [style*="color:#92400E" i],
+html.dark:not(.mobile-rem-base) [style*="color: #92400E" i],
+html.dark:not(.mobile-rem-base) [style*="color:#EA580C" i] {
+  color: #FBBF24 !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#DC2626" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #DC2626" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(220, 38, 38)" i],
+html.dark:not(.mobile-rem-base) [style*="color:#DC2626" i],
+html.dark:not(.mobile-rem-base) [style*="color: #DC2626" i],
+html.dark:not(.mobile-rem-base) [style*="color:rgb(220, 38, 38)" i] {
+  color: #F87171 !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:#9333EA" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color: #9333EA" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="color:rgb(147, 51, 234)" i],
+html.dark:not(.mobile-rem-base) [style*="color:#9333EA" i],
+html.dark:not(.mobile-rem-base) [style*="color: #9333EA" i] {
+  color: #C084FC !important;
+}
+
+/* --- 4. 밝은 인라인 배경색 오버라이드 (그레이/슬레이트/블루 서피스) --- */
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#F8FAFC" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #F8FAFC" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgb(248, 250, 252)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: rgb(248, 250, 252)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgba(248, 250, 252," i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: rgba(248, 250, 252," i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#F1F5F9" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #F1F5F9" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgb(241, 245, 249)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: rgb(241, 245, 249)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgba(241, 245, 249," i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: rgba(241, 245, 249," i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#F4F5F7" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #F4F5F7" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgb(244, 245, 247)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: rgb(244, 245, 247)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#E2E8F0" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #E2E8F0" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgb(226, 232, 240)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: rgb(226, 232, 240)" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#F8FAFC" i],
+html.dark:not(.mobile-rem-base) [style*="background-color: #F8FAFC" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:rgb(248, 250, 252)" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#F1F5F9" i],
+html.dark:not(.mobile-rem-base) [style*="background-color: #F1F5F9" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:rgb(241, 245, 249)" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#F4F5F7" i],
+html.dark:not(.mobile-rem-base) [style*="background-color: #F4F5F7" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:rgb(244, 245, 247)" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#E2E8F0" i] {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 반투명/순수 흰색 배경 박스 */
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#ffffff" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #ffffff" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgb(255, 255, 255)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: rgb(255, 255, 255)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgba(255, 255, 255" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: rgba(255, 255, 255" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background:#ffffff" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background: #ffffff" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background:rgba(255, 255, 255" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background: rgba(255, 255, 255" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#ffffff" i],
+html.dark:not(.mobile-rem-base) [style*="background-color: #ffffff" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:rgb(255, 255, 255)" i],
+html.dark:not(.mobile-rem-base) [style*="background-color: rgba(255, 255, 255" i],
+html.dark:not(.mobile-rem-base) [style*="background:#ffffff" i],
+html.dark:not(.mobile-rem-base) [style*="background:rgba(255, 255, 255" i] {
+  background-color: rgba(26, 28, 35, 0.88) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 파스텔 틴트 배경 박스 (블루, 그린, 앰버, 퍼플, 레드) */
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#EFF6FF" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #EFF6FF" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgb(239, 246, 255)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: rgb(239, 246, 255)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#EAF2FF" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #EAF2FF" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgb(234, 242, 255)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#EBF3FF" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #EBF3FF" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#DBEAFE" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #DBEAFE" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgb(219, 234, 254)" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#EFF6FF" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#EAF2FF" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#EBF3FF" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#DBEAFE" i] {
+  background-color: rgba(30, 58, 138, 0.25) !important;
+  border-color: rgba(96, 165, 250, 0.25) !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#ECFDF5" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #ECFDF5" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgb(236, 253, 245)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#F0FDF4" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #F0FDF4" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgb(240, 253, 244)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#DCFCE7" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #DCFCE7" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgb(220, 252, 231)" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#ECFDF5" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#F0FDF4" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#DCFCE7" i] {
+  background-color: rgba(5, 150, 105, 0.2) !important;
+  border-color: rgba(52, 211, 153, 0.25) !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#FEF3C7" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #FEF3C7" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgb(254, 243, 199)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#FFF7ED" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #FFF7ED" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgb(255, 247, 237)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#FFFBEB" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #FFFBEB" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#FEF3C7" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#FFF7ED" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#FFFBEB" i] {
+  background-color: rgba(217, 119, 6, 0.2) !important;
+  border-color: rgba(251, 191, 36, 0.25) !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#FEE2E2" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #FEE2E2" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgb(254, 226, 226)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#FEF2F2" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #FEF2F2" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgb(254, 242, 242)" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#FEE2E2" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#FEF2F2" i] {
+  background-color: rgba(220, 38, 38, 0.2) !important;
+  border-color: rgba(248, 113, 113, 0.25) !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#FDF4FF" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #FDF4FF" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:rgb(253, 244, 255)" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color:#FAF5FF" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="background-color: #FAF5FF" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#FDF4FF" i],
+html.dark:not(.mobile-rem-base) [style*="background-color:#FAF5FF" i] {
+  background-color: rgba(147, 51, 234, 0.2) !important;
+  border-color: rgba(192, 132, 252, 0.25) !important;
+}
+
+/* --- 5. 인라인 테두리 (#E2E8F0, #CBD5E1, #BFDBFE, #E0E7FF, #1E3A8A) --- */
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border-color:#E2E8F0" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border-color: #E2E8F0" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border:1px solid #E2E8F0" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border: 1px solid #E2E8F0" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border-bottom:1px solid #e2e8f0" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border-bottom: 1px solid #e2e8f0" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border-color:#cbd5e1" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border-color: #cbd5e1" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border:1px solid #cbd5e1" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border: 1px solid #cbd5e1" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border-color:#BFDBFE" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border-color: #BFDBFE" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border:1px solid #BFDBFE" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border: 1px solid #BFDBFE" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border-top:2px solid #e0e7ff" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border-top: 2px solid #e0e7ff" i],
+html.dark:not(.mobile-rem-base) [style*="border-color:#E2E8F0" i],
+html.dark:not(.mobile-rem-base) [style*="border: 1px solid #E2E8F0" i],
+html.dark:not(.mobile-rem-base) [style*="border-bottom: 1px solid #e2e8f0" i],
+html.dark:not(.mobile-rem-base) [style*="border-color:#cbd5e1" i],
+html.dark:not(.mobile-rem-base) [style*="border: 1px solid #cbd5e1" i],
+html.dark:not(.mobile-rem-base) [style*="border-color:#BFDBFE" i],
+html.dark:not(.mobile-rem-base) [style*="border-top: 2px solid #e0e7ff" i] {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border:1.5px solid #1e3a8a" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border: 1.5px solid #1e3a8a" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border:1.5px solid #002454" i],
+html[data-theme="dark"]:not(.mobile-rem-base) [style*="border: 1.5px solid #002454" i],
+html.dark:not(.mobile-rem-base) [style*="border:1.5px solid #1e3a8a" i],
+html.dark:not(.mobile-rem-base) [style*="border: 1.5px solid #1e3a8a" i] {
+  border-color: rgba(96, 165, 250, 0.4) !important;
+}
+
+/* --- 6. 검색 하이라이트 (<mark>) --- */
+html[data-theme="dark"]:not(.mobile-rem-base) mark,
+html.dark:not(.mobile-rem-base) mark {
+  background-color: rgba(234, 179, 8, 0.35) !important;
+  color: #FEF08A !important;
+}
+
+/* --- 7. OS prefers-color-scheme 동기화 블록 --- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="color:#0F172A" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="color: #0F172A" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="color:rgb(15, 23, 42)" i] {
+    color: #F8FAFC !important;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="color:#1E293B" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="color:#334155" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="color:rgb(51, 65, 85)" i] {
+    color: #E2E8F0 !important;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="color:#475569" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="color:#64748B" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="color:#94A3B8" i] {
+    color: #94A3B8 !important;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="color:#002454" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="color:#003378" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="color:#1E3A8A" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="color:#1D4ED8" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="color:#1A4B8C" i] {
+    color: #93C5FD !important;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background-color:#F8FAFC" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background-color:#F1F5F9" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background-color:#F4F5F7" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background-color:#E2E8F0" i] {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background-color:#ffffff" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background-color:rgba(255, 255, 255" i] {
+    background-color: rgba(26, 28, 35, 0.88) !important;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background-color:#EFF6FF" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background-color:#EAF2FF" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background-color:#EBF3FF" i] {
+    background-color: rgba(30, 58, 138, 0.25) !important;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background-color:#ECFDF5" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background-color:#DCFCE7" i] {
+    background-color: rgba(5, 150, 105, 0.2) !important;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background-color:#FEF3C7" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background-color:#FFF7ED" i] {
+    background-color: rgba(217, 119, 6, 0.2) !important;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background-color:#FEE2E2" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="background-color:#FEF2F2" i] {
+    background-color: rgba(220, 38, 38, 0.2) !important;
+  }
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="border-color:#E2E8F0" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="border-color:#cbd5e1" i],
+  :root:not([data-theme="light"]):not(.mobile-rem-base) [style*="border-bottom:1px solid #e2e8f0" i] {
+    border-color: rgba(255, 255, 255, 0.12) !important;
+  }
+}
+
+/* --- 8. 테이블 헤더, 스위스 글래스, 모달 팝업 특화 --- */
+html[data-theme="dark"]:not(.mobile-rem-base) thead,
+html[data-theme="dark"]:not(.mobile-rem-base) thead tr,
+html[data-theme="dark"]:not(.mobile-rem-base) thead th,
+html.dark:not(.mobile-rem-base) thead,
+html.dark:not(.mobile-rem-base) thead tr,
+html.dark:not(.mobile-rem-base) thead th {
+  background: var(--table-header-bg) !important;
+  color: #D1D5DB !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) .swiss-glass-dark,
+html.dark:not(.mobile-rem-base) .swiss-glass-dark {
+  background: linear-gradient(135deg, rgba(22, 24, 30, 0.97) 0%, rgba(14, 15, 18, 0.95) 100%) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) .swiss-glass,
+html.dark:not(.mobile-rem-base) .swiss-glass {
+  background: rgba(26, 28, 35, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5) !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) hr,
+html.dark:not(.mobile-rem-base) hr {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) select option,
+html.dark:not(.mobile-rem-base) select option {
+  background-color: #1C1E25 !important;
+  color: #F3F4F6 !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) .pc-header-glass input,
+html.dark:not(.mobile-rem-base) .pc-header-glass input {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  color: #F3F4F6 !important;
+}
+
+html[data-theme="dark"]:not(.mobile-rem-base) .pc-header-glass input::placeholder,
+html.dark:not(.mobile-rem-base) .pc-header-glass input::placeholder {
+  color: #6B7280 !important;
 }
 
 .btn-primary {
@@ -218,6 +1316,64 @@ table tbody tr:hover {
   margin: 0.5rem 0;
 }
 
+/* 사용자가 PC 리치 텍스트 에디터에 다른 폰트/크기/색으로 타이핑하거나 워드·구글독스
+   등에서 그대로 붙여넣은 콘텐츠는 인라인 style로 저장돼(dangerouslySetInnerHTML로
+   그대로 렌더링) 그 폰트/크기/색이 앱 스타일을 뚫고 나온다. 인라인 style은 특정성이
+   높아 !important 없이는 자식 전체(`*`)에 강제 적용이 안 되므로, 여기서는 예외적으로
+   !important를 쓴다 — 출처를 알 수 없는 붙여넣기 서식을 항상 같은 폰트/크기/색으로
+   눌러버리는 것이 이 클래스의 목적이기 때문. */
+.rich-text-content {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  color: inherit !important;
+  font-weight: inherit !important;
+}
+.rich-text-content * {
+  max-width: 100%;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  color: inherit !important;
+  font-weight: inherit !important;
+  background-color: transparent !important;
+  /* Word/Google Docs에서 붙여넣은 글머리 기호는 실제 <ul>/<li>가 아니라, 문단에
+     text-indent를 음수로 줘서 첫 줄만 왼쪽으로 튀어나오게 만드는 "매달린 들여쓰기"
+     방식(예: <p style="text-indent:-18pt; margin-left:36pt">)인 경우가 흔하다 —
+     ul/ol에 준 padding-left 리셋만으로는 이 경우를 못 잡아서, 그 • 문자가 카드
+     바깥으로 삐져나오는 게 실기기에서 재현됐다. 문단 단위로도 음수 들여쓰기를
+     전부 눌러 막는다. */
+  text-indent: 0 !important;
+}
+.rich-text-content strong, .rich-text-content b { font-weight: 800 !important; }
+.rich-text-content em, .rich-text-content i { font-style: italic !important; }
+/* 붙여넣은 <ul>/<ol>이 브라우저 기본 들여쓰기 없이 렌더링되면 불릿 마커가 박스
+   왼쪽 바깥으로 삐져나간다 — 리스트 자체에 안전한 들여쓰기 공간(1.5rem)을 명시적으로 주고,
+   list-style-type 및 list-style-position을 강제 적용해 불릿이 박스 테두리 바깥으로 튀어나가지 않게 한다. */
+.rich-text-content ul,
+.rich-editor-content ul {
+  list-style-type: disc !important;
+  list-style-position: outside !important;
+  padding-left: 1.5rem !important;
+  margin: 0.35rem 0 !important;
+}
+.rich-text-content ol,
+.rich-editor-content ol {
+  list-style-type: decimal !important;
+  list-style-position: outside !important;
+  padding-left: 1.5rem !important;
+  margin: 0.35rem 0 !important;
+}
+.rich-text-content li,
+.rich-editor-content li {
+  display: list-item !important;
+  margin: 0.2rem 0 !important;
+  padding-left: 0.15rem !important;
+}
+
 /* Figma Theme Custom Tokens & Classes */
 .bg-Cloud-Gray-\(2\) { background-color: #F4F5F7; }
 .bg-blue-\(4\) { background-color: #002454; }
@@ -234,4 +1390,791 @@ table tbody tr:hover {
 .text-blue-\(5\) { color: #002454; }
 .text-blue-\(3\) { color: #1A4B8C; }
 .text-Soft-White { color: #FFFFFF; }
+
+/* Safe-area helpers for the mobile shell (notch / home-indicator devices) */
+.safe-pb {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.safe-pt {
+  /* env(safe-area-inset-top)만 쓰면, 노치가 있는데도 이 값을 0(또는 아주 작은 값)
+     으로 보고하는 일부 실기기 브라우저에서 콘텐츠 맨 위가 상태바(시계/신호/배터리)
+     뒤로 가려지는 문제가 실사용 중 반복 확인됐다 — max()로 최소 여백을 함께
+     보장해, env()가 큰 값을 주면 그 값을, 작거나 0이면 이 최소값을 쓰도록 했다.
+     1.5rem으로는 일부 기기에서 여전히 살짝 가려진다는 재확인이 있어 2.75rem으로
+     더 넉넉하게 올렸다 — 노치가 큰 기기는 어차피 env() 실측값이 이를 넘어서므로
+     영향 없고, env()가 작게(또는 0으로) 보고되는 기기에서만 이 최소값이 실제로
+     적용된다. */
+  padding-top: max(env(safe-area-inset-top), 2.75rem);
+}
+
+/* 새 댓글(관리자 피드백 대기) 표시 — 채팅 버튼 배경 및 NEW 배지 깜빡임 애니메이션 (라이트모드는 진한 회색, 다크모드는 하얀색으로 펄스) */
+@keyframes chat-btn-new-pulse {
+  0%, 100% { background-color: #1E293B; }
+  50% { background-color: #475569; }
+}
+@keyframes chat-btn-new-pulse-dark {
+  0%, 100% { background-color: #FFFFFF; }
+  50% { background-color: rgba(255, 255, 255, 0.45); }
+}
+
+.chat-btn-new {
+  background-color: #1E293B;
+  color: #FFFFFF;
+  border-color: #0F172A !important;
+  animation: chat-btn-new-pulse 2.2s ease-in-out infinite;
+}
+
+html[data-mobile-theme="dark"] .chat-btn-new,
+html.dark .chat-btn-new {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  animation: chat-btn-new-pulse-dark 2.2s ease-in-out infinite !important;
+}
+
+@keyframes new-badge-pulse-light {
+  0%, 100% { background-color: #0F172A; }
+  50% { background-color: #475569; }
+}
+
+@keyframes new-badge-pulse-dark {
+  0%, 100% { background-color: #FFFFFF; color: #000000; }
+  50% { background-color: rgba(255, 255, 255, 0.45); color: #000000; }
+}
+
+.new-badge-pulse {
+  animation: new-badge-pulse-light 2.2s ease-in-out infinite;
+}
+
+html[data-mobile-theme="dark"] .new-badge-pulse,
+html.dark .new-badge-pulse {
+  animation: new-badge-pulse-dark 2.2s ease-in-out infinite !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-btn-new,
+  .new-badge-pulse {
+    animation: none !important;
+  }
+}
+
+/* Figma mobile type system (see --font-mobile / --font-sf-pro above) */
+.font-mobile-body {
+  font-family: var(--font-mobile);
+}
+.font-mobile-sf {
+  font-family: var(--font-sf-pro);
+}
+
+/* Figma "bottom navbar" component's exact liquid-glass material, pulled from the
+   Figma REST API's effect list for node 852:34431 (background blur 10px behind a
+   5%-opacity white fill, two ambient drop shadows, four inner shadows for the
+   frosted edge highlight). A plain CSS class because Tailwind's arbitrary-value
+   syntax can't cleanly hold six comma-separated shadow layers.
+
+   IMPORTANT for every .glass-* rule below: write `-webkit-backdrop-filter` BEFORE
+   the unprefixed `backdrop-filter`, never after. Turbopack's CSS minifier collapses
+   the two into one and keeps whichever comes first — with the unprefixed property
+   first, it silently discarded it and kept only the -webkit- one, which current
+   Chrome doesn't honor by itself, so every "glass" surface rendered as a flat
+   tinted color with zero blur despite the CSS looking correct in source. Confirmed
+   by diffing the actually-served compiled CSS, not just the source file. */
+.glass-navbar {
+  background: rgba(255, 255, 255, 0.05);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 8px 72px -5px rgba(0, 0, 0, 0.10),
+    0 2px 30px 0 rgba(0, 0, 0, 0.05),
+    inset 0 2px 20px 2px rgba(53, 53, 53, 0.05),
+    inset 0 0 5px 0 rgba(255, 255, 255, 0.15),
+    inset -1px -1px 0 0 rgba(255, 255, 255, 0.4),
+    inset 1px 0.5px 0 0 rgba(255, 255, 255, 0.6);
+}
+@supports not (backdrop-filter: blur(1px)) {
+  /* Samsung Internet / older WebViews without backdrop-filter support:
+     fall back to a solid-enough surface so the bar stays legible. */
+  .glass-navbar {
+    background: rgba(255, 255, 255, 0.82);
+  }
+}
+.glass-navbar-active {
+  background: rgba(0, 0, 0, 0.4);
+}
+html.mobile-rem-base[data-mobile-theme="dark"] .glass-navbar-active,
+html[data-theme="dark"] .glass-navbar-active,
+html.dark .glass-navbar-active {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* 대시보드 액션 버튼(기획안 작성/보기, 완성본 업로드/보기)용 글래스 재질 — Figma에
+   이 버튼들의 블러 스펙이 없어(원본은 단색 채우기, §11 감사 문서 참고) navbar와
+   같은 blur(10px) 기법·쉐도우 레이어링 관례를 그대로 가져와 앱 전체의 글래스
+   비주얼 언어를 일관되게 확장한 것 — Figma 실측치가 아니라 디자인 판단이다. */
+/* 2026-08-21 2차 감사 — Liquid Glass 가이드라인(frost 10~25 통일, 텍스트 대비
+   4.5:1 이상) 기준으로 .glass-cta* 알파 스펙트럼을 재조정. 기존 값들은 컴포넌트별
+   실사용자 피드백으로 개별 튜닝된 이력이 있었으나(주석 이력은 git log 참고), 알파가
+   0.16~0.85로 넓게 흩어져 있고 그중 일부(.glass-cta-primary)는 실측 결과 흰 텍스트
+   대비가 2.44:1까지 떨어져 있어(WCAG AA 4.5:1 미달) 실제 접근성 결함이었다. 아래
+   값들은 프로젝트 표준(최소 틴트, glass-design-minimal-tint 메모리)과 Apple Liquid
+   Glass 권장(중립 틴트는 낮게, 원색 채움이 필요한 곳은 그만큼 불투명도를 올려 대비를
+   확보)을 함께 반영해 재계산한 값으로, 각 값의 텍스트 대비를 실측(canvas 픽셀 판독
+   방식과 동일한 sRGB 알파 블렌딩 계산)해 4.5:1 이상을 확인한 뒤 확정했다. */
+.glass-cta {
+  background: rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    0 8px 20px -6px rgba(15, 23, 42, 0.18),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.55),
+    inset 0 -1px 0 0 rgba(255, 255, 255, 0.12);
+}
+/* 기획안 쪽 흰색 틴트는 배경(#F4F5F7)과 거의 같은 색이라 층이 분리돼 보이지 않는다는
+   피드백으로 배경 불투명도만 올린 변형. glass-cta와 함께 써서
+   (className="glass-cta glass-cta-strong") blur·테두리·그림자는 그대로 두고
+   background만 덮어쓴다. */
+.glass-cta-strong {
+  background: rgba(255, 255, 255, 0.3);
+}
+html.mobile-rem-base[data-mobile-theme="dark"] .glass-cta,
+html.mobile-rem-base.dark .glass-cta,
+html[data-theme="dark"] .glass-cta,
+html.dark .glass-cta {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  color: #FFFFFF !important;
+}
+/* "완성본 업로드" 버튼 전용 — 대시보드 상단 "기획안 마감" D-day 위젯의 배경/텍스트
+   색(#C0CFE4 / #003378, 대시보드에 이미 있는 톤)을 그대로 가져와 앱 내 기존 팔레트와
+   맞췄다. 짙은 블루 텍스트가 항상 10:1 이상의 여유 있는 대비를 가지므로 최소 틴트
+   원칙에 맞춰 알파를 0.85 → 0.3으로 낮춤 (실측 대비 10.6:1 확보, 이전에는 필요
+   이상으로 불투명했음). */
+.glass-cta-sky {
+  background: rgba(192, 207, 228, 0.3);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 8px 20px -6px rgba(0, 51, 120, 0.18),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.55),
+    inset 0 -1px 0 0 rgba(255, 255, 255, 0.2);
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-cta-sky {
+    background: rgba(192, 207, 228, 0.96);
+  }
+}
+/* glass-cta-sky 다크모드 — 밝은 스카이 블루 배경을 어두운 환경에 맞는
+   남색 반투명 유리로 전환 */
+html.mobile-rem-base[data-mobile-theme="dark"] .glass-cta-sky,
+html.mobile-rem-base.dark .glass-cta-sky {
+  background: rgba(0, 51, 120, 0.35) !important;
+  border-color: rgba(100, 160, 255, 0.25) !important;
+  box-shadow:
+    0 8px 20px -6px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.2) !important;
+}
+/* 전체 리스트에서 선택된 콘텐츠의 "기획안 상세보기" 아이콘 버튼 전용 (현재 코드베이스
+   내 미사용, 배지 색만 정의). 알파를 0.55 → 0.28로 낮췄다 — 이 톤에 얹는 텍스트/
+   아이콘은 흰색이 아니라 짙은 남색(#002454 계열)을 써야 12:1 이상의 대비를 확보한다
+   (흰 텍스트는 이 amber 톤 위에서 알파값과 무관하게 항상 2:1 미만으로 실패하므로
+   재사용 시 반드시 짙은 텍스트로 적용할 것). */
+.glass-cta-kraft {
+  background: rgba(255, 184, 0, 0.28);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 236, 179, 0.55);
+  box-shadow:
+    0 8px 20px -6px rgba(153, 102, 0, 0.28),
+    inset 0 1px 0 0 rgba(255, 244, 214, 0.45),
+    inset 0 -1px 0 0 rgba(133, 82, 0, 0.15);
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-cta-kraft {
+    background: rgba(255, 184, 0, 0.92);
+  }
+}
+.glass-cta-primary {
+  /* 기존 0.38은 흰 텍스트 기준 실측 대비 2.44:1로 WCAG AA(4.5:1) 미달이었다.
+     navy는 채도가 높아 낮은 알파에서도 "불투명해 보이는" 착시가 있었지만 실제 대비는
+     그와 무관하게 배경색과의 혼합 비율로만 결정되므로, 흰 텍스트를 유지하는 이상
+     알파를 낮추는 방향은 Liquid Glass의 "블러 후 4.5:1" 기준과 정면으로 어긋난다.
+     0.65로 올려 실측 대비 5.0:1을 확보했다 — Apple 가이드가 명시하는 "글래스 내부의
+     버튼은 솔리드에 가까운 채움" 원칙과도 부합한다. */
+  background: rgba(0, 36, 84, 0.65);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 8px 20px -6px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.25),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.15);
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-cta {
+    background: rgba(255, 255, 255, 0.92);
+  }
+  .glass-cta-primary {
+    background: rgba(0, 36, 84, 0.92);
+  }
+}
+/* 전체 리스트에서 선택된 콘텐츠의 "완성본 상세보기"(Drive) 아이콘 버튼 전용 강조
+   변형 (현재 코드베이스 내 미사용). .glass-cta-primary와 같은 이유로 0.55 → 0.75로
+   상향해 흰 텍스트/아이콘 대비를 확보 (.glass-cta-strong과 동일한 패턴: base 클래스와
+   함께 사용 — 소스 순서상 반드시 .glass-cta-primary 뒤에 와야 캐스케이드에서 이긴다). */
+.glass-cta-primary-strong {
+  background: rgba(0, 36, 84, 0.75);
+}
+
+/* 기획안/완성본 상세보기 좌상단에 뜨는 글래스 상태 배지 — 기존 앱 전체에서 쓰는
+   기획안(#FFB800 amber)/완성본(#00A859 green) 색 코딩을 글래스 재질로 옮긴 것. */
+.glass-badge-proposal {
+  background: rgba(255, 184, 0, 0.4);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+.glass-badge-final {
+  background: rgba(0, 168, 89, 0.4);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-badge-proposal {
+    background: rgba(255, 184, 0, 0.92);
+  }
+  .glass-badge-final {
+    background: rgba(0, 168, 89, 0.92);
+  }
+}
+
+/* 네이티브 date/month 입력(기획안 작성의 대상 월/희망 업로드 시기/데드라인)이
+   같은 폭(w-full)의 다른 입력란보다 더 넓어 보인다는 실기기 제보 — WebKit이
+   이런 입력의 내부 레이아웃을 CSS width가 아니라 자체 "logical width" 알고리즘
+   으로 계산하는 문서화된 동작 때문으로, -webkit-min-logical-width를 명시적으로
+   100%로 강제해 다른 입력들과 동일하게 부모 폭을 그대로 따르게 한다. */
+input[type="date"],
+input[type="month"] {
+  box-sizing: border-box;
+  -webkit-min-logical-width: 100%;
+}
+
+/* =========================================================================
+   PC Interaction & Motion System (Micro-interactions & Smooth Transitions)
+   ========================================================================= */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes modalBackdropFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulseSubtle {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.025);
+  }
+}
+
+/* Smooth Entry Animation Classes */
+.animate-enter {
+  animation: fadeInUp 0.38s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.animate-backdrop {
+  animation: modalBackdropFade 0.22s ease-out backwards;
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 2.5s ease-in-out infinite;
+}
+
+/* Stagger Delays for Dashboards & Grids */
+.stagger-1 { animation-delay: 40ms; }
+.stagger-2 { animation-delay: 80ms; }
+.stagger-3 { animation-delay: 120ms; }
+.stagger-4 { animation-delay: 160ms; }
+.stagger-5 { animation-delay: 200ms; }
+
+/* Interactive Hover & Press Utilities */
+.motion-card {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease;
+}
+.motion-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px -8px rgba(0, 36, 84, 0.09), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+}
+.motion-card:active {
+  transform: translateY(-1px) scale(0.995);
+}
+
+.motion-btn {
+  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.16s ease, background-color 0.16s ease, border-color 0.16s ease;
+  user-select: none;
+}
+.motion-btn:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(0, 36, 84, 0.08);
+}
+.motion-btn:active {
+  transform: translateY(0.5px) scale(0.97);
+  box-shadow: none;
+}
+
+.motion-scale {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.motion-scale:hover {
+  transform: scale(1.04);
+}
+.motion-scale:active {
+  transform: scale(0.96);
+}
+
+.motion-row {
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+}
+.motion-row:hover {
+  transform: translateX(3px);
+}
+.motion-row:active {
+  transform: translateX(1px) scale(0.998);
+}
+
+/* PC 전체 콘텐츠 리스트 — 한 행에 호버하면 나머지 행은 연하게 가라앉고
+   호버 중인 행만 또렷하게 남는 스포트라이트 효과. */
+.content-list-hover-group:hover .motion-row {
+  opacity: 0.5;
+}
+.content-list-hover-group:hover .motion-row:hover {
+  opacity: 1;
+}
+
+.sidebar-link {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, color 0.2s ease;
+}
+.sidebar-link:hover {
+  transform: translateX(4px);
+}
+.sidebar-link:active {
+  transform: translateX(2px) scale(0.98);
+}
+
+/* =========================================================================
+   Mobile Dark Mode (independent from PC dark mode, scoped to /mobile only)
+   ========================================================================= */
+
+html.mobile-rem-base {
+  --m-bg: #F8FAFC;
+  --m-surface: #FFFFFF;
+  --m-surface-soft: #F1F5F9;
+  --m-surface-strong: #E2E8F0;
+  --m-border: transparent;
+  --m-border-soft: transparent;
+  --m-text-heading: #0F172A;
+  --m-text-body: #334155;
+  --m-text-muted: #64748B;
+  --m-text-faint: #94A3B8;
+  --m-blue-surface: #EFF6FF;
+  --m-blue-surface-strong: #DBEAFE;
+  --m-blue-border: transparent;
+  --m-blue-text: #002454;
+  --m-blue-text-strong: #1E3A8A;
+  --m-red-surface: #FEF2F2;
+  --m-red-surface-strong: #FEE2E2;
+  --m-red-border: transparent;
+  --m-red-text: #DC2626;
+  --m-platform-glyph: #FFFFFF;
+
+  /* 캘린더 날씨 뷰 — 날씨 아이콘의 상징색을 dim한 그라데이션으로 배경에 반영,
+     텍스트는 그 위에서도 뚜렷이 읽히는 진한 색으로 대비를 맞춘다. */
+  --m-weather-clear-bg: linear-gradient(135deg, rgba(251, 191, 36, 0.32), rgba(254, 243, 199, 0.55));
+  --m-weather-clear-text: #92400E;
+  --m-weather-partly-bg: linear-gradient(135deg, rgba(56, 189, 248, 0.26), rgba(254, 240, 138, 0.28));
+  --m-weather-partly-text: #075985;
+  --m-weather-cloudy-bg: linear-gradient(135deg, rgba(148, 163, 184, 0.32), rgba(226, 232, 240, 0.45));
+  --m-weather-cloudy-text: #334155;
+  --m-weather-fog-bg: linear-gradient(135deg, rgba(203, 213, 225, 0.4), rgba(248, 250, 252, 0.55));
+  --m-weather-fog-text: #475569;
+  --m-weather-rain-bg: linear-gradient(135deg, rgba(59, 130, 246, 0.28), rgba(191, 219, 254, 0.35));
+  --m-weather-rain-text: #1E40AF;
+  --m-weather-snow-bg: linear-gradient(135deg, rgba(129, 140, 248, 0.24), rgba(224, 231, 255, 0.45));
+  --m-weather-snow-text: #3730A3;
+  --m-weather-storm-bg: linear-gradient(135deg, rgba(168, 85, 247, 0.28), rgba(233, 213, 255, 0.35));
+  --m-weather-storm-text: #6B21A8;
+  --m-weather-default-bg: rgba(241, 245, 249, 0.9);
+  --m-weather-default-text: #64748B;
+  --m-weather-temp-max-text: #DC2626;
+  --m-weather-temp-min-text: #002454;
+  --m-weather-temp-sep-text: #94A3B8;
+}
+
+@media (prefers-color-scheme: dark) {
+  html.mobile-rem-base:not([data-mobile-theme="light"]) {
+    --m-bg: #18191D;
+    --m-surface: rgba(34, 36, 41, 0.85);
+    --m-surface-soft: #202227;
+    --m-surface-strong: #282A30;
+    --m-border: rgba(255, 255, 255, 0.08);
+    --m-border-soft: rgba(255, 255, 255, 0.05);
+    --m-text-heading: #F2F3F5;
+    --m-text-body: #E6E7EA;
+    --m-text-muted: #9AA0AA;
+    --m-text-faint: #6A707C;
+    --m-blue-surface: rgba(255, 255, 255, 0.05);
+    --m-blue-surface-strong: rgba(255, 255, 255, 0.10);
+    --m-blue-border: rgba(255, 255, 255, 0.08);
+    --m-blue-text: #E6E7EA;
+    --m-blue-text-strong: #FFFFFF;
+    --m-red-surface: rgba(239, 68, 68, 0.15);
+    --m-red-surface-strong: rgba(239, 68, 68, 0.25);
+    --m-red-border: rgba(239, 68, 68, 0.3);
+    --m-red-text: #F87171;
+    --m-platform-glyph: #000000;
+
+    --m-weather-clear-bg: linear-gradient(135deg, rgba(180, 130, 20, 0.4), rgba(32, 34, 39, 0.85));
+    --m-weather-clear-text: #FDE68A;
+    --m-weather-partly-bg: linear-gradient(135deg, rgba(14, 116, 144, 0.4), rgba(32, 34, 39, 0.85));
+    --m-weather-partly-text: #BAE6FD;
+    --m-weather-cloudy-bg: linear-gradient(135deg, rgba(71, 85, 105, 0.4), rgba(32, 34, 39, 0.85));
+    --m-weather-cloudy-text: #E2E8F0;
+    --m-weather-fog-bg: linear-gradient(135deg, rgba(100, 116, 139, 0.32), rgba(32, 34, 39, 0.85));
+    --m-weather-fog-text: #F1F5F9;
+    --m-weather-rain-bg: linear-gradient(135deg, rgba(30, 64, 175, 0.42), rgba(32, 34, 39, 0.85));
+    --m-weather-rain-text: #BFDBFE;
+    --m-weather-snow-bg: linear-gradient(135deg, rgba(67, 56, 202, 0.38), rgba(32, 34, 39, 0.85));
+    --m-weather-snow-text: #E0E7FF;
+    --m-weather-storm-bg: linear-gradient(135deg, rgba(107, 33, 168, 0.42), rgba(32, 34, 39, 0.85));
+    --m-weather-storm-text: #F3E8FF;
+    --m-weather-default-bg: rgba(32, 34, 39, 0.85);
+    --m-weather-default-text: #CBD5E1;
+    --m-weather-temp-max-text: #FCA5A5;
+    --m-weather-temp-min-text: #93C5FD;
+    --m-weather-temp-sep-text: #6B7280;
+  }
+}
+
+html.mobile-rem-base[data-mobile-theme="dark"],
+html.mobile-rem-base.dark {
+  --m-bg: #18191D;
+  --m-surface: rgba(34, 36, 41, 0.85);
+  --m-surface-soft: #202227;
+  --m-surface-strong: #282A30;
+  --m-border: rgba(255, 255, 255, 0.08);
+  --m-border-soft: rgba(255, 255, 255, 0.05);
+  --m-text-heading: #F2F3F5;
+  --m-text-body: #E6E7EA;
+  --m-text-muted: #9AA0AA;
+  --m-text-faint: #6A707C;
+  --m-blue-surface: rgba(255, 255, 255, 0.05);
+  --m-blue-surface-strong: rgba(255, 255, 255, 0.10);
+  --m-blue-border: rgba(255, 255, 255, 0.08);
+  --m-blue-text: #E6E7EA;
+  --m-blue-text-strong: #FFFFFF;
+  --m-red-surface: rgba(239, 68, 68, 0.15);
+  --m-red-surface-strong: rgba(239, 68, 68, 0.25);
+  --m-red-border: rgba(239, 68, 68, 0.3);
+  --m-red-text: #F87171;
+  --m-platform-glyph: #000000;
+
+  --m-weather-clear-bg: linear-gradient(135deg, rgba(180, 130, 20, 0.4), rgba(32, 34, 39, 0.85));
+  --m-weather-clear-text: #FDE68A;
+  --m-weather-partly-bg: linear-gradient(135deg, rgba(14, 116, 144, 0.4), rgba(32, 34, 39, 0.85));
+  --m-weather-partly-text: #BAE6FD;
+  --m-weather-cloudy-bg: linear-gradient(135deg, rgba(71, 85, 105, 0.4), rgba(32, 34, 39, 0.85));
+  --m-weather-cloudy-text: #E2E8F0;
+  --m-weather-fog-bg: linear-gradient(135deg, rgba(100, 116, 139, 0.32), rgba(32, 34, 39, 0.85));
+  --m-weather-fog-text: #F1F5F9;
+  --m-weather-rain-bg: linear-gradient(135deg, rgba(30, 64, 175, 0.42), rgba(32, 34, 39, 0.85));
+  --m-weather-rain-text: #BFDBFE;
+  --m-weather-snow-bg: linear-gradient(135deg, rgba(67, 56, 202, 0.38), rgba(32, 34, 39, 0.85));
+  --m-weather-snow-text: #E0E7FF;
+  --m-weather-storm-bg: linear-gradient(135deg, rgba(107, 33, 168, 0.42), rgba(32, 34, 39, 0.85));
+  --m-weather-storm-text: #F3E8FF;
+  --m-weather-default-bg: rgba(32, 34, 39, 0.85);
+  --m-weather-default-text: #CBD5E1;
+  --m-weather-temp-max-text: #FCA5A5;
+  --m-weather-temp-min-text: #93C5FD;
+  --m-weather-temp-sep-text: #6B7280;
+}
+
+/* Map the mobile shell's existing hardcoded Tailwind utility classes onto
+   the tokens above, so dark mode doesn't require rewriting every mobile
+   component to consume CSS variables directly. [class~="..."] matches a
+   single whitespace-separated class token exactly, which also sidesteps
+   escaping the "/" in opacity-suffixed utilities like "border-slate-200/80". */
+html.mobile-rem-base [class~="bg-white"],
+html.mobile-rem-base [class~="bg-white/95"],
+html.mobile-rem-base [class~="bg-white/30"] {
+  background-color: var(--m-surface) !important;
+}
+html.mobile-rem-base[data-mobile-theme="dark"] [class~="bg-white/25"],
+html.mobile-rem-base.dark [class~="bg-white/25"],
+html.mobile-rem-base[data-mobile-theme="dark"] [class~="bg-white/75"],
+html.mobile-rem-base.dark [class~="bg-white/75"] {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+html.mobile-rem-base [class~="bg-slate-50"],
+html.mobile-rem-base [class~="bg-slate-50/40"] {
+  background-color: var(--m-surface-soft) !important;
+}
+html.mobile-rem-base [class~="bg-slate-100"],
+html.mobile-rem-base [class~="bg-slate-200"],
+html.mobile-rem-base [class~="bg-slate-200/80"],
+html.mobile-rem-base [class~="bg-slate-200/70"],
+html.mobile-rem-base [class~="bg-slate-300"] {
+  background-color: var(--m-surface-strong) !important;
+}
+html.mobile-rem-base [class~="border-slate-100"],
+html.mobile-rem-base [class~="border-slate-200"],
+html.mobile-rem-base [class~="border-slate-200/80"],
+html.mobile-rem-base [class~="border-slate-200/70"],
+html.mobile-rem-base [class~="border-slate-200/50"],
+html.mobile-rem-base [class~="border-slate-300"],
+html.mobile-rem-base [class~="border-slate-900"],
+html.mobile-rem-base [class~="border-white"],
+html.mobile-rem-base [class~="border-white/10"] {
+  border-color: var(--m-border) !important;
+}
+html.mobile-rem-base [class~="text-slate-900"],
+html.mobile-rem-base [class~="text-slate-800"] {
+  color: var(--m-text-heading) !important;
+}
+html.mobile-rem-base [class~="text-slate-700"],
+html.mobile-rem-base [class~="text-slate-600"] {
+  color: var(--m-text-body) !important;
+}
+html.mobile-rem-base [class~="text-slate-500"],
+html.mobile-rem-base [class~="text-slate-400"],
+html.mobile-rem-base [class~="text-slate-300"],
+html.mobile-rem-base [class~="text-slate-200"] {
+  color: var(--m-text-muted) !important;
+}
+html.mobile-rem-base [class~="bg-blue-50"],
+html.mobile-rem-base [class~="bg-blue-100"] {
+  background-color: var(--m-blue-surface) !important;
+}
+html.mobile-rem-base [class~="border-blue-100"],
+html.mobile-rem-base [class~="border-blue-200"],
+html.mobile-rem-base [class~="border-blue-300"] {
+  border-color: var(--m-blue-border) !important;
+}
+html.mobile-rem-base [class~="text-blue-900"],
+html.mobile-rem-base [class~="text-blue-800"] {
+  color: var(--m-blue-text) !important;
+}
+html.mobile-rem-base [class~="text-blue-700"],
+html.mobile-rem-base [class~="text-blue-600"] {
+  color: var(--m-blue-text-strong) !important;
+}
+html.mobile-rem-base [class~="bg-red-50"] {
+  background-color: var(--m-red-surface) !important;
+}
+html.mobile-rem-base [class~="bg-red-100"],
+html.mobile-rem-base [class~="border-red-100"] {
+  border-color: var(--m-red-border) !important;
+}
+html.mobile-rem-base [class~="text-red-500"],
+html.mobile-rem-base [class~="text-red-600"] {
+  color: var(--m-red-text) !important;
+}
+html.mobile-rem-base [class~="hover:bg-blue-50"]:hover,
+html.mobile-rem-base [class~="hover:bg-slate-100"]:hover {
+  background-color: var(--m-blue-surface-strong) !important;
+}
+html.mobile-rem-base input,
+html.mobile-rem-base textarea,
+html.mobile-rem-base select {
+  background-color: var(--m-surface) !important;
+  color: var(--m-text-heading) !important;
+  border-color: var(--m-border) !important;
+}
+html.mobile-rem-base input::placeholder,
+html.mobile-rem-base textarea::placeholder {
+  color: var(--m-text-faint) !important;
+}
+html.mobile-rem-base body {
+  background-color: var(--m-bg);
+}
+
+/* Map this app's own arbitrary-value Tailwind classes (bg-[#F4F5F7],
+   text-[#002454], ...) onto the same tokens — these are used far more than
+   the named-palette classes above throughout the mobile components, and
+   were previously uncovered, which is why the mobile shell stayed light
+   even with the dark toggle on: its own root wrapper is bg-[#F4F5F7]. */
+html.mobile-rem-base [class~="bg-[#F4F5F7]"] {
+  background-color: var(--m-bg) !important;
+}
+html.mobile-rem-base [class~="bg-[#EBF3FF]"],
+html.mobile-rem-base [class~="bg-[#EAF2FF]"] {
+  background-color: var(--m-blue-surface) !important;
+}
+html.mobile-rem-base [class~="bg-[#C0CFE4]"],
+html.mobile-rem-base [class~="bg-[#99B3D6]"],
+html.mobile-rem-base [class~="bg-[#C0CFE4]/50"],
+html.mobile-rem-base [class~="bg-[#C0CFE4]/25"] {
+  background-color: var(--m-blue-surface-strong) !important;
+}
+html.mobile-rem-base [class~="bg-[#003378]"] {
+  background-color: #003378 !important;
+  border-color: #002454 !important;
+  color: #FFFFFF !important;
+}
+html.mobile-rem-base[data-mobile-theme="dark"] [class~="bg-[#002454]"],
+html.mobile-rem-base.dark [class~="bg-[#002454]"] {
+  background: linear-gradient(135deg, rgba(22, 24, 30, 0.95) 0%, rgba(14, 15, 18, 0.92) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #F2F3F5 !important;
+}
+html.mobile-rem-base[data-mobile-theme="dark"] [class~="bg-[#00A859]"],
+html.mobile-rem-base.dark [class~="bg-[#00A859]"] {
+  background-color: #059669 !important;
+  color: #FFFFFF !important;
+}
+html.mobile-rem-base [class~="border-[#002454]"],
+html.mobile-rem-base [class~="border-[#C0CFE4]"] {
+  border-color: var(--m-blue-border) !important;
+}
+/* 캘린더 선택된 날짜/리스트 항목 강조 테두리(ring) */
+html.mobile-rem-base[data-mobile-theme="dark"] [class~="ring-[#003378]"],
+html.mobile-rem-base.dark [class~="ring-[#003378]"],
+html.mobile-rem-base[data-mobile-theme="dark"] [class~="ring-[#002454]"],
+html.mobile-rem-base.dark [class~="ring-[#002454]"],
+html.mobile-rem-base[data-mobile-theme="dark"] [class~="ring-[#002454]/20"],
+html.mobile-rem-base.dark [class~="ring-[#002454]/20"] {
+  --tw-ring-color: rgba(255, 255, 255, 0.25) !important;
+}
+html.mobile-rem-base[data-mobile-theme="dark"] [class~="text-[#002454]"],
+html.mobile-rem-base.dark [class~="text-[#002454]"],
+html.mobile-rem-base[data-mobile-theme="dark"] [class~="text-[#003378]"],
+html.mobile-rem-base.dark [class~="text-[#003378]"],
+html.mobile-rem-base[data-mobile-theme="dark"] [class~="text-[#1A4B8C]"],
+html.mobile-rem-base.dark [class~="text-[#1A4B8C]"] {
+  color: #F2F3F5 !important;
+}
+html.mobile-rem-base [class~="text-[#111111]"],
+html.mobile-rem-base [class~="text-[#1A1A1A]"],
+html.mobile-rem-base [class~="text-[#383838]"] {
+  color: var(--m-text-heading) !important;
+}
+html.mobile-rem-base [class~="text-[#757575]"] {
+  color: var(--m-text-muted) !important;
+}
+
+/* 대시보드 하단의 "기획안 작성"/"완성본 업로드"·상세보기 모달의 "수정하기"/
+   "완성본 업로드하기" 버튼처럼 .glass-cta-strong 또는 .glass-cta-sky가 함께
+   붙어 불투명도를 40%~85%까지 끌어올린 "밝은 유리" 변형만 배경이 실제로
+   밝으므로 짙은 남색 텍스트가 필요하다. 반면 같은 .glass-cta라도 강조 변형이
+   없는 기본형(예: 모달 우측 하단 ✕ 닫기 버튼)은 불투명도가 16%뿐이라 여전히
+   어두운 페이지가 거의 그대로 비쳐 보이므로, 남색 텍스트를 강제하면 어두운
+   배경 위에 어두운 글자가 겹쳐 버린다 — 이 두 강조 변형에만 규칙을 한정한다. */
+/* 라이트모드에서만 #002454 강제 — 다크모드는 별도 규칙에서 흰색 적용 */
+html.mobile-rem-base:not([data-mobile-theme="dark"]):not(.dark) [class~="glass-cta"][class~="glass-cta-strong"],
+html.mobile-rem-base:not([data-mobile-theme="dark"]):not(.dark) [class~="glass-cta-sky"] {
+  color: #002454 !important;
+}
+/* 다크모드에서는 glass-cta-strong / glass-cta-sky 위에서도 흰색 강제 */
+html.mobile-rem-base[data-mobile-theme="dark"] [class~="glass-cta"][class~="glass-cta-strong"],
+html.mobile-rem-base[data-mobile-theme="dark"] [class~="glass-cta-sky"],
+html.mobile-rem-base.dark [class~="glass-cta"][class~="glass-cta-strong"],
+html.mobile-rem-base.dark [class~="glass-cta-sky"] {
+  color: #FFFFFF !important;
+}
+
+/* CopyableBlock Dark/Light Mode Overlay Styles */
+.copyable-overlay {
+  background-color: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  color: #ffffff;
+}
+
+.copyable-hover-content,
+.copyable-hover-content *,
+html[data-theme="dark"] .copyable-hover-content,
+html[data-theme="dark"] .copyable-hover-content *,
+html.dark .copyable-hover-content,
+html.dark .copyable-hover-content * {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+  font-weight: 700 !important;
+}
+
+.copyable-copied-content,
+.copyable-copied-content *,
+html[data-theme="dark"] .copyable-copied-content,
+html[data-theme="dark"] .copyable-copied-content *,
+html.dark .copyable-copied-content,
+html.dark .copyable-copied-content * {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  color: #93C5FD !important;
+  box-shadow: none !important;
+  font-weight: 700 !important;
+}
+
+/* 외부 붙여넣기(노션/워드/구글독스 등)로 유입된 인라인 텍스트 배경색 강제 제거 및 다크모드 가독성 보장 */
+.rich-text-content,
+.rich-text-content *,
+.rich-editor-content *,
+.cdm-rich-content,
+.cdm-rich-content * {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+/* 다크모드에서 인라인 강제 검정 글자색(#000 등) 상속 처리 */
+html[data-theme="dark"] .rich-text-content *:not(a):not(button),
+html[data-theme="dark"] .cdm-rich-content *:not(a):not(button),
+html.dark .rich-text-content *:not(a):not(button),
+html.dark .cdm-rich-content *:not(a):not(button),
+.dark .rich-text-content *:not(a):not(button),
+.dark .cdm-rich-content *:not(a):not(button) {
+  color: inherit !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.mobile-rem-base) .rich-text-content *:not(a):not(button),
+  :root:not([data-theme="light"]):not(.mobile-rem-base) .cdm-rich-content *:not(a):not(button) {
+    color: inherit !important;
+  }
+}
 

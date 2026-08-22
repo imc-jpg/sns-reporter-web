@@ -1,3 +1,7 @@
+-- [B19] ⚠️ 위험: 이 파일은 초기 개발 전용 스키마 파일입니다.
+-- 라이브(운영) Supabase SQL 에디터에서 절대 실행하지 마세요.
+-- 2번 줄의 DROP TABLE 명령이 contents 테이블 전체(기획안/완성본/프로필 데이터)를 삭제합니다.
+-- 증분 패치는 supabase_v3.sql / supabase_v4.sql 을 사용하세요.
 -- 기존 테이블이 있다면 삭제하고 새 구조로 생성 (초기 개발용)
 DROP TABLE IF EXISTS public.contents;
 

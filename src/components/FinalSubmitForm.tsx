@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense, useRef, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { cleanAuthorName } from '@/utils/dateUtils';
 import { useRouter, useSearchParams } from 'next/navigation';
 import RichTextEditor from '@/components/RichTextEditor';
 import Link from 'next/link';
@@ -178,7 +179,7 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
       const userEmail = currentUser?.email;
 
       const { data: profileRow } = await supabase.from('contents').select('author_name').eq('title', `PROFILE_${userEmail}`).single();
-      const userName = profileRow?.author_name || currentUser?.user_metadata?.full_name || currentUser?.user_metadata?.name || null;
+      const userName = cleanAuthorName(profileRow?.author_name || currentUser?.user_metadata?.full_name || currentUser?.user_metadata?.name);
       setAuthorName(userName || '이름 없음');
 
       const { data: props } = await supabase
@@ -278,7 +279,7 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
     if (!user) return;
     
     const { data: profileRow } = await supabase.from('contents').select('author_name').eq('title', `PROFILE_${user.email}`).single();
-    const userName = profileRow?.author_name || user.user_metadata?.full_name || user.user_metadata?.name || null;
+    const userName = cleanAuthorName(profileRow?.author_name || user.user_metadata?.full_name || user.user_metadata?.name);
 
     const { data } = await supabase.from('contents').select('*').eq('status', 'approved').order('created_at', { ascending: false });
     const myDrafts = (data || []).filter(d => {
@@ -385,7 +386,7 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
     
     const { data: { user } } = await supabase.auth.getUser();
     const { data: profile } = await supabase.from('contents').select('author_name').eq('title', `PROFILE_${user?.email}`).single();
-    const displayName = profile?.author_name || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'Unknown';
+    const displayName = cleanAuthorName(profile?.author_name || user?.user_metadata?.full_name || user?.user_metadata?.name) || user?.email?.split('@')[0] || 'Unknown';
 
     const message = {
       id: Date.now(),
@@ -467,39 +468,39 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
 
   return (
     <div className={embeddedId ? '' : 'container'} style={{ paddingBottom: embeddedId ? '0' : '4rem', width: '100%', height: embeddedId ? '100%' : 'auto' }}>
-      <div style={{ maxWidth: '800px', margin: '0 auto', backgroundColor: '#ffffff', borderRadius: '16px', padding: embeddedId ? '1.5rem' : '3rem', boxShadow: embeddedId ? 'none' : '0 4px 20px rgba(0,0,0,0.05)', position: 'relative' }}>
-        
+      <div style={{ maxWidth: '800px', margin: '0 auto', backgroundColor: 'var(--color-panel)', borderRadius: '16px', padding: embeddedId ? '1.5rem' : '3rem', boxShadow: embeddedId ? 'none' : '0 4px 20px rgba(0,0,0,0.05)', position: 'relative' }}>
+
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #0f172a', paddingBottom: '1rem', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid var(--color-text-heading)', paddingBottom: '1rem', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button type="button" onClick={handleClose} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0f172a' }}>
+            <button type="button" onClick={handleClose} aria-label="닫기" style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-heading)' }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
             </button>
-            <h2 style={{ fontSize: embeddedId ? '1.5rem' : '2rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>완성본 {isReadOnly && '미리보기'}</h2>
+            <h2 style={{ fontSize: embeddedId ? '1.5rem' : '2rem', fontWeight: 800, margin: 0, color: 'var(--color-text-heading)' }}>완성본 {isReadOnly && '미리보기'}</h2>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
             <button type="button" onClick={loadDrafts} style={{ backgroundColor: '#1e3a8a', color: 'white', padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', border: 'none' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
               임시저장함
             </button>
-            <div style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 500 }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>
               작성자: {authorName} / {new Date().toLocaleDateString('ko-KR').replace(/\. /g, '.').replace(/\.$/, '')}
             </div>
           </div>
         </div>
 
         {showDrafts && (
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255,255,255,0.98)', zIndex: 100, borderRadius: '16px', padding: '2rem', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'var(--color-panel)', zIndex: 100, borderRadius: '16px', padding: '2rem', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>완성본 임시저장함</h3>
-              <button type="button" onClick={() => setShowDrafts(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--color-text-heading)', margin: 0 }}>완성본 임시저장함</h3>
+              <button type="button" onClick={() => setShowDrafts(false)} aria-label="닫기" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
-            
+
             <div style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem' }}>
               {drafts.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '3rem 0', color: '#64748b', backgroundColor: '#f8fafc', borderRadius: '12px' }}>
+                <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--color-text-muted)', backgroundColor: 'var(--color-panel-alt)', borderRadius: '12px' }}>
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ margin: '0 auto 1rem', opacity: 0.5 }}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path></svg>
                   <p style={{ margin: 0, fontWeight: 600 }}>완성본 임시저장 내역이 없습니다.</p>
                 </div>
@@ -513,14 +514,24 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
                         dEmail = (body as any).authorEmail; 
                     } catch(e) {}
                     return (
-                      <div key={d.id} style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', transition: 'all 0.2s', cursor: 'pointer' }} onClick={() => useDraft(d)} onMouseEnter={(e) => e.currentTarget.style.borderColor = '#94a3b8'} onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}>
+                      <div
+                        key={d.id}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`임시저장 "${d.title}" 불러오기`}
+                        style={{ border: '1px solid var(--color-border)', borderRadius: '12px', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--color-panel)', transition: 'all 0.2s', cursor: 'pointer' }}
+                        onClick={() => useDraft(d)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); useDraft(d); } }}
+                        onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--color-text-muted)'}
+                        onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--color-border)'}
+                      >
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                          <span style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>{d.title}</span>
-                          <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                          <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-text-main)' }}>{d.title}</span>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
                             {new Date(d.created_at).toLocaleDateString('ko-KR')} · {d.team} · {d.content_type}
                           </span>
                         </div>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteDraft(d.id); }} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteDraft(d.id); }} aria-label="임시저장 삭제" style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                         </button>
                       </div>
@@ -535,7 +546,7 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
         <form autoComplete="off" onSubmit={(e) => handleSubmit(e, false)} className="flex-col gap-6">
           {/* 기획안 선택 (선택 시 해당 정보 표시용) */}
           <div className="flex-col gap-2" style={{ display: initialId ? 'none' : 'flex' }}>
-            <label style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>대상 기획안 선택</label>
+            <label style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text-main)' }}>대상 기획안 선택</label>
             <select 
               name="proposalId"
               value={formData.proposalId} 
@@ -559,7 +570,7 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
                  }
               }}
               required
-              style={{ border: 'none', backgroundColor: '#f3f4f6', padding: '1rem', borderRadius: '8px', fontSize: '1rem', outline: 'none' }}
+              style={{ border: 'none', backgroundColor: 'var(--input-glass-bg)', padding: '1rem', borderRadius: '8px', fontSize: '1rem', outline: 'none' }}
               disabled={!!initialId || isReadOnly || isSubmitting}
             >
               <option value="">-- 제출할 기획안을 선택하세요 --</option>
@@ -577,9 +588,9 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
                 const gdInfo = getGoogleDriveInfo(formData.finalUrl);
                 
                 return (
-                  <div style={{ position: 'relative', width: '100%', borderRadius: '16px', overflow: 'hidden', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ position: 'relative', width: '100%', borderRadius: '16px', overflow: 'hidden', backgroundColor: 'var(--color-surface)', display: 'flex', flexDirection: 'column' }}>
                     {/* Cover image or Embed */}
-                    <div style={{ width: '100%', height: '300px', backgroundColor: '#e2e8f0', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: '16px' }}>
+                    <div style={{ width: '100%', height: '300px', backgroundColor: 'var(--color-panel-alt)', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: '16px' }}>
                        {ytId ? (
                            <iframe 
                              src={`https://www.youtube.com/embed/${ytId}`} 
@@ -609,9 +620,9 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
                        )}
                     </div>
                     {/* Proposal Info */}
-                    <div style={{ paddingTop: '1.5rem', backgroundColor: '#ffffff' }}>
-                      <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>{selectedProposal.title}</h3>
-                      <div style={{ fontSize: '0.85rem', color: '#475569', marginBottom: '0.8rem', fontWeight: 500 }}>
+                    <div style={{ paddingTop: '1.5rem', backgroundColor: 'var(--color-surface)' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800, color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>{selectedProposal.title}</h3>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '0.8rem', fontWeight: 500 }}>
                         {selectedProposal.author_name} / {selectedProposal.team} / {selectedProposal.content_type}
                       </div>
                       {formData.finalUrl && (
@@ -628,23 +639,27 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
 
           {/* 구글 드라이브 링크 */}
           <div className="flex-col gap-2">
-            <label style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>구글 드라이브 / 유튜브 링크 <span style={{color: '#ef4444'}}>*</span></label>
-            <input 
-              type="url" 
-              name="finalUrl" 
-              value={formData.finalUrl} 
-              onChange={handleChange} 
-              placeholder="내용을 입력해주세요" 
-              required 
-              disabled={isReadOnly || isSubmitting} 
-              style={{ border: 'none', backgroundColor: '#f3f4f6', padding: '1rem', borderRadius: '8px', fontSize: '1rem', outline: 'none' }} 
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-main)' }}>구글 드라이브 / 유튜브 링크 <span style={{color: '#ef4444'}}>*</span></label>
+            <input
+              type="url"
+              name="finalUrl"
+              value={formData.finalUrl}
+              onChange={handleChange}
+              placeholder="https://drive.google.com/file/d/..."
+              required
+              disabled={isReadOnly || isSubmitting}
+              style={{ border: 'none', backgroundColor: 'var(--input-glass-bg)', padding: '0.875rem 1rem', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 500, outline: 'none' }}
             />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 0.75rem', backgroundColor: 'var(--color-tint-warning)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--color-tint-warning-text)', fontWeight: 500 }}>
+              <span>💡</span>
+              <span>구글 드라이브 공유 설정을 <strong>'링크가 있는 모든 사용자 (뷰어)'</strong>로 지정해야 미리보기가 정상 표시됩니다.</span>
+            </div>
           </div>
 
           {/* 본문 / 캡션 내용 */}
           <div className="flex-col gap-2">
-            <label style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>본문 / 캡션 내용</label>
-            <div style={{ backgroundColor: '#f3f4f6', borderRadius: '8px', padding: '0.5rem', border: 'none' }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-main)' }}>본문 / 캡션 내용</label>
+            <div style={{ backgroundColor: 'var(--input-glass-bg)', borderRadius: '8px', padding: '0.5rem', border: 'none' }}>
                 <RichTextEditor 
                   value={formData.postContent} 
                   onChange={(val) => setFormData({...formData, postContent: val})} 
@@ -657,30 +672,33 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
 
           {/* 해시태그 */}
           <div className="flex-col gap-2">
-            <label style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>#해시태그 (쉼표로 구분, 기획안 연동)</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#f3f4f6', padding: '0.5rem', borderRadius: '8px' }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-main)' }}>#해시태그 (쉼표 또는 스페이스로 구분, 기획안 연동)</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--input-glass-bg)', padding: '0.5rem', borderRadius: '8px' }}>
               <div style={{ backgroundColor: '#1e3a8a', color: 'white', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
               </div>
               <input type="text" name="keywords" value={formData.keywords} onChange={(e) => {
-                  const parts = e.target.value.split(',');
+                  // 쉼표 또는 스페이스 모두 구분자로 허용
+                  const raw = e.target.value;
+                  const parts = raw.split(/[,\s]+/).map(k => k.trim()).filter(Boolean);
                   if (parts.length > 5) {
-                    setFormData(prev => ({ ...prev, keywords: parts.slice(0, 5).join(',') }));
+                    setFormData(prev => ({ ...prev, keywords: parts.slice(0, 5).join(', ') }));
                   } else {
-                    handleChange(e);
+                    const isTyping = /[,\s]$/.test(raw);
+                    setFormData(prev => ({ ...prev, keywords: isTyping ? raw : parts.join(', ') }));
                   }
-              }} placeholder="기획안을 선택하면 자동으로 불러와집니다. (쉼표로 구분)" disabled={isReadOnly || isSubmitting} style={{ border: 'none', backgroundColor: 'transparent', flex: 1, outline: 'none', fontSize: '0.9rem' }} />
+              }} placeholder="기획안을 선택하면 자동으로 불러와집니다. (쉼표 또는 스페이스로 구분)" disabled={isReadOnly || isSubmitting} style={{ border: 'none', backgroundColor: 'transparent', flex: 1, outline: 'none', fontSize: '0.9rem', fontWeight: 500 }} />
             </div>
             {formData.keywords && (
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.2rem' }}>
-                {formData.keywords.split(',').map(kw => kw.trim()).filter(Boolean).map((kw, i) => (
-                  <span key={i} style={{ backgroundColor: '#93c5fd', color: '#1e3a8a', padding: '0.3rem 0.8rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                    {kw} 
+                {formData.keywords.split(/[,\s]+/).map(kw => kw.trim()).filter(Boolean).map((kw, i) => (
+                  <span key={i} style={{ backgroundColor: 'var(--color-chip-bg)', color: 'var(--color-chip-text)', padding: '0.3rem 0.8rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    {kw}
                     {!isReadOnly && !isSubmitting && (
                         <button type="button" onClick={() => {
-                            const newKws = formData.keywords.split(',').map(k=>k.trim()).filter(k => k && k !== kw).join(', ');
+                            const newKws = formData.keywords.split(/[,\s]+/).map(k=>k.trim()).filter(k => k && k !== kw).join(', ');
                             setFormData({...formData, keywords: newKws});
-                        }} style={{ background: 'none', border: 'none', color: '#1e3a8a', cursor: 'pointer', padding: 0, fontSize: '12px' }}>✕</button>
+                        }} style={{ background: 'none', border: 'none', color: 'var(--color-chip-text)', cursor: 'pointer', padding: 0, fontSize: '12px' }}>✕</button>
                     )}
                   </span>
                 ))}
@@ -691,9 +709,9 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
           {/* 제작 인원 */}
           <div className="flex-col gap-2">
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-              <label style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>제작 인원 (자동완성, 수정가능하도록 접근 오픈)</label>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-main)', margin: 0 }}>제작 인원 (자동완성, 수정가능하도록 접근 오픈)</label>
               {!isReadOnly && !isSubmitting && (
-                <button type="button" onClick={() => setIsCrewEditable(!isCrewEditable)} style={{ backgroundColor: isCrewEditable ? '#f1f5f9' : '#1e3a8a', color: isCrewEditable ? '#475569' : 'white', border: isCrewEditable ? '1px solid #cbd5e1' : 'none', padding: '0.3rem 0.6rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <button type="button" onClick={() => setIsCrewEditable(!isCrewEditable)} style={{ backgroundColor: isCrewEditable ? 'var(--color-panel-alt)' : '#1e3a8a', color: isCrewEditable ? 'var(--color-text-muted)' : 'white', border: isCrewEditable ? '1px solid var(--color-border)' : 'none', padding: '0.3rem 0.6rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                   {isCrewEditable ? '수정 완료' : '수정하기'}
                 </button>
               )}
@@ -711,7 +729,7 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
                     <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: isFirst ? '#1E3A8A' : '#0284C7', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.2rem' }}>
                        {firstLetter}
                     </div>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>{formattedName}</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-main)' }}>{formattedName}</span>
                     
                     {!isReadOnly && !isSubmitting && isCrewEditable && cleanName !== cleanAuthorName && (
                       <button type="button" onClick={() => {
@@ -726,19 +744,19 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
                
                {!isReadOnly && !isSubmitting && isCrewEditable && (
                  <div style={{ position: 'relative' }}>
-                   <button type="button" onClick={() => setShowMemberSelect(!showMemberSelect)} style={{ width: '56px', height: '56px', borderRadius: '50%', border: '2px dashed #cbd5e1', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', cursor: 'pointer', alignSelf: 'flex-start' }}>
+                   <button type="button" onClick={() => setShowMemberSelect(!showMemberSelect)} style={{ width: '56px', height: '56px', borderRadius: '50%', border: '2px dashed var(--color-border)', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', cursor: 'pointer', alignSelf: 'flex-start' }}>
                       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                    </button>
-                   
+
                    {showMemberSelect && (
-                     <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '10px', width: '300px', backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0', zIndex: 100, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                       <div style={{ padding: '0.8rem', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
-                         <input 
-                           type="text" 
-                           placeholder="이름 검색..." 
-                           value={memberSearchQuery} 
-                           onChange={e => setMemberSearchQuery(e.target.value)} 
-                           style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.85rem' }} 
+                     <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '10px', width: '300px', backgroundColor: 'var(--color-panel)', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', border: '1px solid var(--color-border)', zIndex: 100, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                       <div style={{ padding: '0.8rem', borderBottom: '1px solid var(--color-border)', backgroundColor: 'var(--color-panel-alt)' }}>
+                         <input
+                           type="text"
+                           placeholder="이름 검색..."
+                           value={memberSearchQuery}
+                           onChange={e => setMemberSearchQuery(e.target.value)}
+                           style={{ width: '100%', padding: '0.5rem', border: '1px solid var(--color-border)', borderRadius: '6px', fontSize: '0.85rem', backgroundColor: 'var(--input-glass-bg)', color: 'var(--color-text-main)' }}
                          />
                        </div>
                        <div style={{ maxHeight: '250px', overflowY: 'auto', padding: '0.5rem' }}>
@@ -762,9 +780,9 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
                                      }
                                      setFormData({ ...formData, crew: crewArray.join(', ') });
                                  }}
-                                 style={{ padding: '0.6rem 0.8rem', borderRadius: '6px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: isSelected ? 'var(--color-primary-light)' : 'transparent', fontWeight: isSelected ? 700 : 500, color: isSelected ? 'var(--color-primary)' : '#334155' }}
+                                 style={{ padding: '0.6rem 0.8rem', borderRadius: '6px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: isSelected ? 'var(--color-tint-accent)' : 'transparent', fontWeight: isSelected ? 700 : 500, color: isSelected ? 'var(--color-chip-text)' : 'var(--color-text-main)' }}
                                >
-                                 <span>{p.author_name} {p.team && <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 400 }}>({p.team})</span>}</span>
+                                 <span>{p.author_name} {p.team && <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 400 }}>({p.team})</span>}</span>
                                  {isSelected && <span>✓</span>}
                                </div>
                              );
@@ -779,22 +797,22 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
 
           {/* 비고 */}
           <div className="flex-col gap-2">
-            <label style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>비고</label>
-            <textarea 
-              name="description" 
-              value={formData.description} 
-              onChange={handleChange} 
-              placeholder="내용을 입력해주세요" 
-              rows={3} 
-              disabled={isReadOnly || isSubmitting} 
-              style={{ border: 'none', backgroundColor: '#f3f4f6', padding: '1rem', borderRadius: '8px', outline: 'none', resize: 'vertical' }} 
+            <label style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text-main)' }}>비고</label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="내용을 입력해주세요"
+              rows={3}
+              disabled={isReadOnly || isSubmitting}
+              style={{ border: 'none', backgroundColor: 'var(--input-glass-bg)', padding: '1rem', borderRadius: '8px', outline: 'none', resize: 'vertical' }}
             />
           </div>
 
           {/* Buttons */}
           {!isReadOnly && (
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-              <button type="button" onClick={(e) => handleSubmit(e, true)} disabled={isSubmitting} style={{ flex: 1, padding: '1rem', borderRadius: '8px', border: '2px solid #1e3a8a', backgroundColor: '#ffffff', color: '#1e3a8a', fontWeight: 800, fontSize: '1.1rem', cursor: 'pointer' }}>
+              <button type="button" onClick={(e) => handleSubmit(e, true)} disabled={isSubmitting} style={{ flex: 1, padding: '1rem', borderRadius: '8px', border: '2px solid #1e3a8a', backgroundColor: 'var(--color-panel)', color: '#1e3a8a', fontWeight: 800, fontSize: '1.1rem', cursor: 'pointer' }}>
                 임시저장
               </button>
               <button type="submit" disabled={isSubmitting} style={{ flex: 1, padding: '1rem', borderRadius: '8px', border: 'none', backgroundColor: '#1e3a8a', color: '#ffffff', fontWeight: 800, fontSize: '1.1rem', cursor: 'pointer' }}>
@@ -805,7 +823,7 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
 
           {isReadOnly && (
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-              <button type="button" onClick={handleClose} disabled={isSubmitting} style={{ flex: 1, padding: '1rem', borderRadius: '8px', border: '2px solid #cbd5e1', backgroundColor: '#ffffff', color: '#475569', fontWeight: 800, fontSize: '1.1rem', cursor: 'pointer' }}>
+              <button type="button" onClick={handleClose} disabled={isSubmitting} style={{ flex: 1, padding: '1rem', borderRadius: '8px', border: '2px solid var(--color-border)', backgroundColor: 'var(--color-panel)', color: 'var(--color-text-muted)', fontWeight: 800, fontSize: '1.1rem', cursor: 'pointer' }}>
                 목록으로
               </button>
               {initialId && (isAdmin || isAuthor) && (

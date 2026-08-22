@@ -51,32 +51,36 @@ export default function FinalDeadlineCarousel({ items, globalFinalDeadline, glob
   if (items.length === 0) {
     const gDay = globalFinalDeadline ? calcDDay(globalFinalDeadline) : null;
     return (
-      <div style={{ 
-        background: 'linear-gradient(135deg, #002454 0%, #003378 100%)', 
-        borderRadius: '24px', 
-        padding: '1.25rem 1.5rem', 
-        flex: 1, 
-        display: 'flex', 
-        flexDirection: 'column', 
-        justifyContent: 'space-between',
-        boxShadow: '0 10px 25px rgba(0, 51, 120, 0.25)',
-        position: 'relative'
-      }}>
+      <div 
+        className="motion-card final-card-bg"
+        style={{ 
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          borderRadius: '24px', 
+          padding: '1.25rem 1.5rem', 
+          flex: 1, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          justifyContent: 'space-between',
+          boxShadow: '0 10px 24px -6px rgba(0, 0, 0, 0.08), inset 0 1px 1px 0 rgba(255, 255, 255, 0.2)',
+          position: 'relative'
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-          <span style={{ color: '#99B3D6', fontSize: '0.82rem', fontWeight: 800 }}>
+          <span style={{ color: 'var(--color-text-heading)', fontSize: '0.82rem', fontWeight: 700 }}>
             {globalFinalLabel || '완성본 마감'}
           </span>
           {globalFinalDeadline && (
-            <span style={{ color: '#99B3D6', fontSize: '0.72rem', fontWeight: 700 }}>
+            <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', fontWeight: 600, opacity: 0.85 }}>
               {globalFinalDeadline}
             </span>
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-          <div style={{ color: '#FFFFFF', fontSize: '2.6rem', fontWeight: 900, letterSpacing: '-1.5px', lineHeight: '1.1' }}>
+          <div style={{ color: 'var(--color-text-heading)', fontSize: '2.4rem', fontWeight: 800, letterSpacing: '-1.5px', lineHeight: '1.1' }}>
             {gDay !== null ? formatDDay(gDay) : '미설정'}
           </div>
-          <span style={{ color: '#99B3D6', fontSize: '0.72rem', fontWeight: 700 }}>
+          <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', fontWeight: 600, opacity: 0.85 }}>
             {globalFinalSubLabel || '마감일 없음'}
           </span>
         </div>
@@ -86,7 +90,7 @@ export default function FinalDeadlineCarousel({ items, globalFinalDeadline, glob
 
   const currentItem = items[currentIndex];
   const dDay = calcDDay(currentItem.deadline);
-  const dDayColor = dDay <= 0 ? '#FF6B6B' : dDay <= 3 ? '#FBBF24' : '#FFFFFF';
+  const dDayColor = dDay <= 0 ? '#EF4444' : dDay <= 3 ? '#D97706' : 'var(--color-text-heading)';
 
   const [mounted, setMounted] = useState(false);
 
@@ -95,12 +99,12 @@ export default function FinalDeadlineCarousel({ items, globalFinalDeadline, glob
   }, []);
 
   const modalContent = showAll && mounted ? createPortal(
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(2px)' }} onClick={() => setShowAll(false)} />
-      <div style={{ position: 'relative', backgroundColor: 'white', borderRadius: '16px', padding: '1.5rem', width: '90%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', zIndex: 10000 }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div className="animate-backdrop" style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }} onClick={() => setShowAll(false)} />
+      <div className="animate-scale-in card" style={{ position: 'relative', backgroundColor: 'var(--color-card-bg)', borderRadius: '24px', padding: '1.5rem', width: '90%', maxWidth: '420px', boxShadow: '0 25px 60px rgba(0, 36, 84, 0.25)', zIndex: 10000 }}>
+        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--color-text-heading)', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           전체 마감일
-          <button onClick={() => setShowAll(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '1.5rem', lineHeight: 1 }}>&times;</button>
+          <button onClick={() => setShowAll(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.5rem', lineHeight: 1 }}>&times;</button>
         </h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
           {items
@@ -109,24 +113,22 @@ export default function FinalDeadlineCarousel({ items, globalFinalDeadline, glob
               const d = calcDDay(item.deadline);
               const itemColor = d <= 0 ? '#ef4444' : d <= 3 ? '#f59e0b' : '#3b82f6';
               return (
-                <ModalLink key={item.id} href={`/final-works/submit?id=${item.id}`} style={{ display: 'block', textDecoration: 'none', padding: '1.2rem', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: '#FFFFFF', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', transition: 'all 0.2s ease', cursor: 'pointer' }}
+                <ModalLink key={item.id} href={`/final-works/submit?id=${item.id}`} style={{ display: 'block', textDecoration: 'none', padding: '1.2rem', borderRadius: '14px', backgroundColor: 'var(--color-surface)', boxShadow: '0 2px 8px rgba(0,0,0,0.03)', transition: 'all 0.2s ease', cursor: 'pointer' }}
                   onClick={() => setShowAll(false)}
-                  onMouseEnter={(e: any) => e.currentTarget.style.backgroundColor = '#f8fafc'}
-                  onMouseLeave={(e: any) => e.currentTarget.style.backgroundColor = '#FFFFFF'}
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxWidth: '65%' }}>
-                      <div style={{ color: '#334155', fontSize: '0.85rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ color: 'var(--color-text-main)', fontSize: '0.85rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {item.title}
                       </div>
                       {(item.team || item.content_type) && (
-                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
                           {item.team} {item.team && item.content_type ? '·' : ''} {item.content_type}
                         </div>
                       )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '0.1rem' }}>
-                      <span style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600 }}>
+                      <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>
                         {item.deadline}
                       </span>
                       <span style={{ color: itemColor, fontSize: '0.85rem', fontWeight: 900, letterSpacing: '-0.5px' }}>
@@ -144,24 +146,28 @@ export default function FinalDeadlineCarousel({ items, globalFinalDeadline, glob
   ) : null;
 
   return (
-    <div style={{ 
-      background: 'linear-gradient(135deg, #002454 0%, #003378 100%)', 
-      borderRadius: '24px', 
-      padding: '1.25rem 1.5rem', 
-      flex: 1, 
-      display: 'flex', 
-      flexDirection: 'column', 
-      justifyContent: 'space-between',
-      boxShadow: '0 10px 25px rgba(0, 51, 120, 0.25)',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
+    <div 
+      className="motion-card final-card-bg"
+      style={{ 
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        borderRadius: '24px', 
+        padding: '1.25rem 1.5rem', 
+        flex: 1, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        justifyContent: 'space-between',
+        boxShadow: '0 10px 24px -6px rgba(0, 0, 0, 0.08), inset 0 1px 1px 0 rgba(255, 255, 255, 0.2)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}
+    >
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-        <span style={{ color: '#99B3D6', fontSize: '0.82rem', fontWeight: 800 }}>
+        <span style={{ color: 'var(--color-text-heading)', fontSize: '0.82rem', fontWeight: 700 }}>
           완성본 마감
         </span>
-        <span style={{ color: '#99B3D6', fontSize: '0.72rem', fontWeight: 700 }}>
+        <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', fontWeight: 600, opacity: 0.85 }}>
           {currentItem.deadline}
         </span>
       </div>
@@ -170,8 +176,8 @@ export default function FinalDeadlineCarousel({ items, globalFinalDeadline, glob
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
         <div style={{ 
           color: dDayColor, 
-          fontSize: '2.6rem', 
-          fontWeight: 900, 
+          fontSize: '2.4rem', 
+          fontWeight: 800, 
           letterSpacing: '-1.5px', 
           lineHeight: '1.1',
           transition: 'color 0.3s ease'
@@ -180,10 +186,10 @@ export default function FinalDeadlineCarousel({ items, globalFinalDeadline, glob
         </div>
         
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', maxWidth: '55%' }}>
-          <span style={{ 
-            color: '#CADCF0', 
-            fontSize: '0.72rem', 
-            fontWeight: 700, 
+          <span style={{
+            color: 'var(--color-text-muted)',
+            fontSize: '0.72rem',
+            fontWeight: 600, 
             marginBottom: '2px',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -205,7 +211,7 @@ export default function FinalDeadlineCarousel({ items, globalFinalDeadline, glob
                     width: idx === currentIndex ? '14px' : '5px',
                     height: '5px',
                     borderRadius: '3px',
-                    backgroundColor: idx === currentIndex ? '#FFFFFF' : 'rgba(153, 179, 214, 0.5)',
+                    backgroundColor: idx === currentIndex ? '#002454' : 'rgba(0, 36, 84, 0.2)',
                     transition: 'all 0.3s ease'
                   }}
                 />
@@ -220,13 +226,13 @@ export default function FinalDeadlineCarousel({ items, globalFinalDeadline, glob
         onClick={() => setShowAll(true)}
         style={{
           marginTop: '8px',
-          background: 'rgba(255,255,255,0.1)',
-          border: '1px solid rgba(255,255,255,0.15)',
+          background: 'rgba(0, 36, 84, 0.08)',
+          border: 'none',
           borderRadius: '8px',
-          color: '#CADCF0',
+          color: '#002454',
           fontSize: '0.68rem',
-          fontWeight: 700,
-          padding: '4px 10px',
+          fontWeight: 600,
+          padding: '5px 10px',
           cursor: 'pointer',
           alignSelf: 'flex-start',
           transition: 'all 0.2s ease',
@@ -235,10 +241,10 @@ export default function FinalDeadlineCarousel({ items, globalFinalDeadline, glob
           gap: '4px'
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+          e.currentTarget.style.background = 'rgba(0, 36, 84, 0.15)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+          e.currentTarget.style.background = 'rgba(0, 36, 84, 0.08)';
         }}
       >
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

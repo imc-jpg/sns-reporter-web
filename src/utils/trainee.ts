@@ -1,18 +1,15 @@
-/**
- * Helper utility to determine if a content item belongs to Trainee reporters (수습 단원 / 25기)
- */
-export const isTraineeContent = (item: any): boolean => {
+export function isTraineeContent(item: any): boolean {
   if (!item) return false;
-
-  const author = (item.author_name || '').toString();
-  const team = (item.team || '').toString();
-  const title = (item.title || '').toString();
-  const keywords = (item.keywords || '').toString();
   
-  let crewString = '';
-  if (item.parsedCrew) {
-    crewString = item.parsedCrew;
-  } else if (item.content_body && item.content_body.startsWith('{')) {
+  const authorName = item.author_name || '';
+  const team = item.team || '';
+  const title = item.title || '';
+  const keywords = item.keywords || '';
+  const parsedCrew = item.parsedCrew || '';
+  const description = item.description || '';
+
+  let crewString = parsedCrew;
+  if (!crewString && item.content_body && typeof item.content_body === 'string' && item.content_body.startsWith('{')) {
     try {
       const bodyObj = JSON.parse(item.content_body);
       if (typeof bodyObj.crew === 'string') {
@@ -23,17 +20,12 @@ export const isTraineeContent = (item: any): boolean => {
     } catch (e) {}
   }
 
-  // Returns true if author, team, title, keywords, or crew contains 25기 or 수습
+  const fullText = `${authorName} ${team} ${title} ${keywords} ${crewString} ${description}`;
+  
+  // 25기, 26기 등 수습기수 또는 '수습' 키워드가 포함되어 있는지 체크
   return (
-    author.includes('25기') ||
-    author.includes('수습') ||
-    team.includes('25기') ||
-    team.includes('수습') ||
-    title.includes('25기') ||
-    title.includes('수습') ||
-    keywords.includes('25기') ||
-    keywords.includes('수습') ||
-    crewString.includes('25기') ||
-    crewString.includes('수습')
+    fullText.includes('25기') ||
+    fullText.includes('26기') ||
+    fullText.includes('수습')
   );
-};
+}

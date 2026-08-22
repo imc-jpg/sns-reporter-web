@@ -1,122 +1,699 @@
+'use client';
+
+import { useState } from 'react';
+import { 
+  InstagramIcon, 
+  YoutubeIcon, 
+  NaverBlogIcon 
+} from '@/components/platformIcons';
+
+type TabType = 'workflow' | 'platforms' | 'brand' | 'planning' | 'copyright';
+
 export default function GuidelinesPage() {
+  const [activeTab, setActiveTab] = useState<TabType>('workflow');
+  const [activePlatform, setActivePlatform] = useState<'instagram_card' | 'reels_shorts' | 'youtube_long' | 'naver_blog'>('instagram_card');
+  const [copiedText, setCopiedText] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedText(label);
+    setTimeout(() => setCopiedText(null), 2000);
+  };
+
   return (
-    <div className="flex-col gap-4" style={{ maxWidth: '900px', margin: '0 auto', paddingBottom: '4rem' }}>
-      <header style={{ marginBottom: '2rem', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--color-primary)', marginBottom: '0.5rem' }}>SNS기자단 콘텐츠 가이드라인</h1>
-        <p style={{ color: 'var(--color-text-muted)' }}>연세대학교 기자단이 지켜야 할 원칙과 노하우를 확인하세요.</p>
+    <div className="flex flex-col gap-8 max-w-6xl mx-auto pb-24 px-2 sm:px-4">
+      
+      {/* 1. Header Banner */}
+      <header className="bg-[#002454] rounded-2xl p-6 sm:p-10 text-white shadow-md relative overflow-hidden">
+        <div className="flex flex-col gap-4 relative z-10">
+          <div className="flex items-center gap-2">
+            <span className="px-3 py-1 rounded-full bg-white/15 text-blue-100 text-xs font-bold tracking-wide">
+              연세대학교 미디어센터
+            </span>
+            <span className="text-xs text-blue-200 font-medium">
+              공식 실무 제작 매뉴얼
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight m-0">
+              SNS 기자단 콘텐츠 제작 가이드라인
+            </h1>
+            <p className="text-blue-100 text-sm sm:text-base leading-relaxed max-w-3xl m-0">
+              연세대학교 공식 SNS 채널의 브랜드 일관성과 완성도 높은 기사 제작을 위한 5단계 제작 프로세스, 플랫폼별 규격, 공식 비주얼 에셋 및 저작권 수칙입니다.
+            </p>
+          </div>
+        </div>
       </header>
 
-      {/* 필독사항 */}
-      <section className="card" style={{ borderLeft: '4px solid #ef4444' }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem', color: '#ef4444' }}>🚨 필독사항</h2>
-        <ul style={{ paddingLeft: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.95rem' }}>
-          <li><b>26년 4월 ~:</b> 기획안, 발행 시트, 콘텐츠 제출본을 한곳에서 일원화하여 관리하는 통합 서비스 적용.</li>
-          <li>기획안과 완성본은 반드시 <b>최종 게시 전 피드백 과정</b>을 거쳐야 하므로 승인 없이 바로 업로드되지 않습니다.</li>
-          <li>연세대학교 인스타그램 채널은 50만이 넘는 팔로워를 보유하고 있습니다. 여러분의 열정과 책임감이 큰 파급력으로 이어지는 만큼, 자부심을 가지고 최선을 다해 주시기를 부탁드립니다 😊</li>
-        </ul>
-      </section>
+      {/* 2. Main Tab Navigation */}
+      <nav 
+        role="tablist"
+        aria-label="가이드라인 탭 메뉴"
+        className="bg-slate-100 dark:bg-slate-800/70 p-1.5 rounded-2xl grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5"
+      >
+        {[
+          { id: 'workflow', label: '1. 제작 프로세스', sub: '기획 ➔ 승인 ➔ 발행' },
+          { id: 'platforms', label: '2. 플랫폼별 규격', sub: '카드뉴스·릴스·유튜브' },
+          { id: 'brand', label: '3. 브랜드 & 비주얼', sub: '공식 컬러 및 서체' },
+          { id: 'planning', label: '4. 기획 & 취재 섭외', sub: '소재 발굴·DM 양식' },
+          { id: 'copyright', label: '5. 저작권 & 초상권', sub: '라이선스·동의서' },
+        ].map(tab => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              role="tab"
+              aria-selected={isActive}
+              aria-controls={`panel-${tab.id}`}
+              id={`tab-${tab.id}`}
+              type="button"
+              onClick={() => setActiveTab(tab.id as TabType)}
+              className={`text-left p-3.5 rounded-xl transition-all flex flex-col justify-between cursor-pointer ${
+                isActive 
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm font-bold' 
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-800'
+              }`}
+            >
+              <div className="text-xs sm:text-sm font-bold tracking-tight">
+                {tab.label}
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-normal truncate">
+                {tab.sub}
+              </div>
+            </button>
+          );
+        })}
+      </nav>
 
-      {/* 기획 및 취재 원칙 */}
-      <section className="card" style={{ marginTop: '1rem' }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--color-primary)' }}>1. 콘텐츠 기획 및 취재 원칙</h2>
-        <div style={{ padding: '1rem', backgroundColor: 'var(--color-bg)', borderRadius: '8px', marginBottom: '1rem' }}>
-          <p style={{ fontWeight: 600, marginBottom: '0.5rem' }}>📌 원칙: 모든 콘텐츠는 직접 취재를 원칙으로 합니다.</p>
-          <ul style={{ paddingLeft: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--color-text-main)' }}>
-            <li>홈페이지나 포털에서 쉽게 찾을 수 있는 단순 정보성 콘텐츠(플레이리스트, 추천, 단순 큐레이션)보다는 <b>여러분의 시각과 노력</b>이 담긴 기획을 환영합니다.</li>
-            <li>직접 취재가 어려울 경우 관련 학우에게 자료를 요청하거나 <b>명확히 출처를 기재</b>해야 합니다.</li>
-            <li><i style={{ color: '#6b7280' }}>* 예외: 단순 추천 콘텐츠라도 연세대학교만의 색깔이 묻어나거나, 생생한 인터뷰가 포함되어 있다면 좋은 기사로 인정됩니다.</i></li>
-          </ul>
-        </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <div style={{ padding: '1rem', border: '1px solid var(--color-border)', borderRadius: '8px' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>🤝 섭외 DM 지원</h3>
-            <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
-              외부 인플루언서 및 학우 섭외가 필요할 경우 연세대 <b>공식 계정으로 DM</b>을 보내드립니다. 섭외 대상과 보낼 텍스트 내용을 단장님이나 담당자에게 카톡으로 편하게 전달해 주세요.
-            </p>
-          </div>
-          <div style={{ padding: '1rem', border: '1px solid var(--color-border)', borderRadius: '8px' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>⏰ 시의성이 중요한 콘텐츠</h3>
-            <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
-              행사, 트렌드 등 타이밍이 생명인 콘텐츠는 마감일에 구애받지 말고 <b>기획 단계부터 미디어센터와 실시간으로 소통</b>해 주세요.
-            </p>
-          </div>
-        </div>
-      </section>
+      {/* ===================== TAB 1: 제작 프로세스 ===================== */}
+      {activeTab === 'workflow' && (
+        <section 
+          id="panel-workflow" 
+          role="tabpanel" 
+          aria-labelledby="tab-workflow"
+          className="flex flex-col gap-6"
+        >
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 shadow-xs border border-slate-100 dark:border-slate-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 m-0">
+                  콘텐츠 제작 및 승인 5단계 프로세스
+                </h2>
+                <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1 m-0">
+                  모든 콘텐츠는 기획안 승인 및 완성본 검수 과정을 거쳐 공식 채널에 업로드됩니다.
+                </p>
+              </div>
+            </div>
 
-      {/* 플랫폼별 가이드라인 */}
-      <section className="card" style={{ marginTop: '1rem' }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--color-primary)' }}>2. 플랫폼별 콘텐츠 제작 주의사항</h2>
-        
-        <div className="flex-col gap-4">
-          {/* 인스타그램 */}
-          <div style={{ borderLeft: '4px solid #e1306c', paddingLeft: '1rem' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#e1306c', marginBottom: '0.5rem' }}>인스타그램 (카드뉴스 & 릴스)</h3>
-            <ul style={{ paddingLeft: '1.5rem', fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <li><b>템플릿 변형 금지:</b> 미리캔버스, 망고보드 템플릿은 레이아웃 참고만 하거나 그대로 사용하되, 연세대만의 색깔을 녹여내주세요.</li>
-              <li><b>해상도 & 비율:</b> 카드뉴스는 1080x1350 (세로형), 릴스는 1080x1920(FHD) mp4 확장자를 준수합니다.</li>
-              <li><b>가독성:</b> 텍스트는 전체 이미지 면적의 절반을 넘지 않도록 간결하게 구성하세요. 빈 여백이 있어야 학우들의 반응이 높아집니다.</li>
-              <li><b>해시태그:</b> 핵심 키워드 위주로 <b>최대 5개</b>까지만 달아주세요. 그 이상은 인식이 안 될 수 있습니다.</li>
-              <li><b>음원 처리:</b> 릴스는 원활한 싱크를 위해 영상에 음원을 직접 입혀서 제출하는 것을 권장합니다.</li>
-            </ul>
-          </div>
-
-          {/* 블로그 */}
-          <div style={{ borderLeft: '4px solid #03c75a', paddingLeft: '1rem' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#03c75a', marginBottom: '0.5rem' }}>네이버 블로그</h3>
-            <ul style={{ paddingLeft: '1.5rem', fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <li>기존 발행글과 중복 방지를 위한 <b>사전 노출 검색</b> 필수</li>
-              <li>상위 노출을 위해 본문 텍스트 길이는 <b>총 3,000자 이상</b> 작성을 권장합니다.</li>
-              <li>본문 내 <b>'연세대학교', '꿀팁', '대학생'</b> 등 타깃층 검색 키워드를 반복&자연스럽게 녹여주세요.</li>
-            </ul>
-          </div>
-
-          {/* 유튜브 롱폼 */}
-          <div style={{ borderLeft: '4px solid #ff0000', paddingLeft: '1rem' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#ff0000', marginBottom: '0.5rem' }}>유튜브 (롱폼 영상)</h3>
-            <ul style={{ paddingLeft: '1.5rem', fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <li>기획 단계에서 방송사 출신 PD님 등 전문가에게 적극적으로 조언을 구하세요.</li>
-              <li>미디어센터 구독 계정인 <b>엔바토, 모션어레이</b>를 활용해 고퀄리티 음원과 자막을 사용하세요.</li>
-              <li>숏폼 병행 제작 시, 가로 원본 영상을 세로로 크롭하여 포맷에 맞게 최적화하시기 바랍니다.</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      {/* 소재 찾기 STEP */}
-      <section className="card" style={{ marginTop: '1rem', backgroundColor: 'var(--color-primary-light)', border: 'none' }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--color-primary)' }}>💡 콘텐츠 소재 발굴 3단계 (STEP)</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-          
-          <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '8px' }}>
-            <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.5rem', color: 'var(--color-primary)' }}>STEP 1: 내가 하고 싶은 것</h3>
-            <ul style={{ paddingLeft: '1.2rem', fontSize: '0.85rem', color: 'var(--color-text-main)' }}>
-              <li>예쁜 비주얼의 콘텐츠인가?</li>
-              <li>다양한 사람을 인터뷰하고 싶은가?</li>
-              <li>나만의 꿀팁을 전수하고 싶은가?</li>
-            </ul>
+            {/* Step List */}
+            <ol className="grid grid-cols-1 md:grid-cols-5 gap-4 list-none p-0 m-0">
+              {[
+                { 
+                  step: '1', 
+                  title: '기획안 작성', 
+                  tag: '기자 작성', 
+                  desc: '주제, 기획의도, 플랫폼, 참여 크루, 희망 일정을 대시보드에 등록합니다.' 
+                },
+                { 
+                  step: '2', 
+                  title: '기획안 검토', 
+                  tag: '미디어센터', 
+                  desc: '아이템 중복 및 시의성을 검토하여 승인 또는 보완 피드백을 전달합니다.' 
+                },
+                { 
+                  step: '3', 
+                  title: '취재 및 제작', 
+                  tag: '현장 취재', 
+                  desc: '승인된 기획안을 바탕으로 현장 촬영, 인터뷰 섭외 및 편집을 진행합니다.' 
+                },
+                { 
+                  step: '4', 
+                  title: '완성본 제출', 
+                  tag: '최종본 등록', 
+                  desc: '완성된 작업물 링크(구글 드라이브)와 캡션 본문을 대시보드에 등록합니다.' 
+                },
+                { 
+                  step: '5', 
+                  title: '최종 검수·발행', 
+                  tag: '공식 업로드', 
+                  desc: '최종 검수를 거쳐 공식 SNS 채널에 송출되며 상태가 완료로 변경됩니다.' 
+                },
+              ].map((s) => (
+                <li 
+                  key={s.step} 
+                  className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="w-6 h-6 rounded-full bg-[#002454] text-white flex items-center justify-center text-xs font-bold">
+                        {s.step}
+                      </span>
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                        {s.tag}
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-1.5">
+                      {s.title}
+                    </h3>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed m-0">
+                      {s.desc}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </div>
 
-          <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '8px' }}>
-            <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.5rem', color: 'var(--color-primary)' }}>STEP 2: 타당성 검증</h3>
-            <ul style={{ paddingLeft: '1.2rem', fontSize: '0.85rem', color: 'var(--color-text-main)' }}>
-              <li>연세대학교와 연관성이 있는가?</li>
-              <li>기존 발행물과 겹치지 않는가?</li>
-              <li>MZ세대, 동문 트렌드를 반영하는가?</li>
-            </ul>
+          {/* Key Directives */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-bold px-2 py-0.5 rounded bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300">
+                  필수 준수
+                </span>
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 m-0">
+                  사전 승인 없는 자체 업로드 금지
+                </h3>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed m-0">
+                모든 콘텐츠는 <strong>기획안 승인 ➔ 완성본 검수</strong>의 2단계 피드백을 필수로 거칩니다. 승인 절차를 거치지 않은 콘텐츠는 공식 채널에 게재할 수 없습니다.
+              </p>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-bold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                  긴급 승인
+                </span>
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 m-0">
+                  시의성 긴급 콘텐츠 패스트트랙
+                </h3>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed m-0">
+                행사, 속보, 축제 등 시의성이 중요한 콘텐츠는 정기 마감일과 무관하게 미디어센터 담당자와 즉시 소통하여 신속 검토 후 취재를 진행할 수 있습니다.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ===================== TAB 2: 플랫폼별 규격 ===================== */}
+      {activeTab === 'platforms' && (
+        <section 
+          id="panel-platforms" 
+          role="tabpanel" 
+          aria-labelledby="tab-platforms"
+          className="flex flex-col gap-6"
+        >
+          {/* Sub Platform Selector */}
+          <div className="flex gap-2 flex-wrap">
+            {[
+              { id: 'instagram_card', label: '인스타그램 카드뉴스 (4:5)', icon: <InstagramIcon className="w-4 h-4" /> },
+              { id: 'reels_shorts', label: '릴스 / 숏폼 (9:16)', icon: <InstagramIcon className="w-4 h-4" /> },
+              { id: 'youtube_long', label: '유튜브 롱폼 & 썸네일 (16:9)', icon: <YoutubeIcon className="w-4 h-4" /> },
+              { id: 'naver_blog', label: '네이버 블로그 (1:1 & 본문)', icon: <NaverBlogIcon className="w-4 h-4" /> },
+            ].map(p => {
+              const isSelected = activePlatform === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setActivePlatform(p.id as any)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
+                    isSelected 
+                      ? 'bg-[#002454] text-white shadow-xs' 
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {p.icon}
+                  {p.label}
+                </button>
+              );
+            })}
           </div>
 
-          <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '8px' }}>
-            <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.5rem', color: 'var(--color-primary)' }}>STEP 3: 관심사 공유</h3>
-            <ul style={{ paddingLeft: '1.2rem', fontSize: '0.85rem', color: 'var(--color-text-main)' }}>
-              <li>수험생/재학생들은 뭘 좋아할까?</li>
-              <li>기자단원들끼리 채널 공유하기</li>
-              <li>10-20대의 최근 알고리즘 분석</li>
-            </ul>
+          {/* Platform 1: Instagram Card News */}
+          {activePlatform === 'instagram_card' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+              {/* Specs Table */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 shadow-xs border border-slate-100 dark:border-slate-800">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
+                  카드뉴스 제작 표준 규격
+                </h3>
+                <div className="flex flex-col gap-3 text-xs sm:text-sm">
+                  <div className="flex justify-between py-2.5 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500 font-medium">권장 해상도</span>
+                    <strong className="text-slate-900 dark:text-slate-100">1080 × 1350 px (4:5 비율)</strong>
+                  </div>
+                  <div className="flex justify-between py-2.5 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500 font-medium">슬라이드 장수</span>
+                    <strong className="text-slate-900 dark:text-slate-100">6 ~ 10장 (표지 포함)</strong>
+                  </div>
+                  <div className="flex justify-between py-2.5 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500 font-medium">파일 형식</span>
+                    <strong className="text-slate-900 dark:text-slate-100">PNG 또는 고화질 JPG</strong>
+                  </div>
+                  <div className="flex justify-between py-2.5 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500 font-medium">외곽 안전 여백</span>
+                    <strong className="text-slate-900 dark:text-slate-100">상하좌우 최소 60px</strong>
+                  </div>
+                  <div className="flex justify-between py-2.5">
+                    <span className="text-slate-500 font-medium">해시태그</span>
+                    <strong className="text-slate-900 dark:text-slate-100">핵심 키워드 3 ~ 5개 권장</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Guidelines */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 shadow-xs border border-slate-100 dark:border-slate-800">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
+                  카드뉴스 제작 핵심 수칙
+                </h3>
+                <ul className="flex flex-col gap-3 list-none p-0 m-0 text-xs sm:text-sm">
+                  <li className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
+                    <strong className="block text-slate-900 dark:text-slate-100 font-bold mb-1">
+                      1. 표지 후킹(Hooking) 타이틀
+                    </strong>
+                    <span className="text-slate-600 dark:text-slate-400">
+                      표지는 한눈에 들어오는 3줄 이내의 핵심 문구로 구성하며, 텍스트 면적이 전체의 40%를 넘지 않도록 여백을 확보합니다.
+                    </span>
+                  </li>
+                  <li className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
+                    <strong className="block text-slate-900 dark:text-slate-100 font-bold mb-1">
+                      2. 슬라이드당 정보 분량 압축
+                    </strong>
+                    <span className="text-slate-600 dark:text-slate-400">
+                      모바일 환경에서는 긴 줄글보다 핵심 문장 1~2개와 시각 자료(사진, 아이콘)를 조합하여 가독성을 높입니다.
+                    </span>
+                  </li>
+                  <li className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
+                    <strong className="block text-slate-900 dark:text-slate-100 font-bold mb-1">
+                      3. 마지막 장 행동 유도(CTA)
+                    </strong>
+                    <span className="text-slate-600 dark:text-slate-400">
+                      엔딩 슬라이드에는 게시물 '저장(Save)' 및 '친구에게 공유'를 유도하는 마무리 멘트를 포함합니다.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Platform 2: Reels & Shorts */}
+          {activePlatform === 'reels_shorts' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+              {/* Specs Table */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 shadow-xs border border-slate-100 dark:border-slate-800">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
+                  숏폼(릴스·쇼츠) 제작 표준 규격
+                </h3>
+                <div className="flex flex-col gap-3 text-xs sm:text-sm">
+                  <div className="flex justify-between py-2.5 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500 font-medium">해상도 및 프레임</span>
+                    <strong className="text-slate-900 dark:text-slate-100">1080 × 1920 px (9:16 / 60fps)</strong>
+                  </div>
+                  <div className="flex justify-between py-2.5 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500 font-medium">권장 영상 길이</span>
+                    <strong className="text-slate-900 dark:text-slate-100">30초 ~ 50초 내외</strong>
+                  </div>
+                  <div className="flex justify-between py-2.5 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500 font-medium">파일 형식</span>
+                    <strong className="text-slate-900 dark:text-slate-100">MP4 (H.264 코덱)</strong>
+                  </div>
+                  <div className="flex justify-between py-2.5 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500 font-medium">자막 안전 영역</span>
+                    <strong className="text-slate-900 dark:text-slate-100">화면 높이 기준 40% ~ 60% 중앙 구간</strong>
+                  </div>
+                  <div className="flex justify-between py-2.5">
+                    <span className="text-slate-500 font-medium">오디오</span>
+                    <strong className="text-slate-900 dark:text-slate-100">자체 마스터링 완료된 믹싱 음원</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Guidelines */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 shadow-xs border border-slate-100 dark:border-slate-800">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
+                  숏폼 영상 핵심 수칙
+                </h3>
+                <ul className="flex flex-col gap-3 list-none p-0 m-0 text-xs sm:text-sm">
+                  <li className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
+                    <strong className="block text-slate-900 dark:text-slate-100 font-bold mb-1">
+                      1. 첫 2초 시선 고정
+                    </strong>
+                    <span className="text-slate-600 dark:text-slate-400">
+                      영상 시작 즉시 질문이나 핵심 장면을 배치하여 스크롤 이탈을 방지하고 시청 지속시간을 확보합니다.
+                    </span>
+                  </li>
+                  <li className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
+                    <strong className="block text-slate-900 dark:text-slate-100 font-bold mb-1">
+                      2. 하단 UI 가림 영역 고려
+                    </strong>
+                    <span className="text-slate-600 dark:text-slate-400">
+                      화면 하단 25%는 계정명과 캡션 글씨가 덮으므로, 주요 자막과 피사체는 반드시 화면 중앙부에 배치합니다.
+                    </span>
+                  </li>
+                  <li className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
+                    <strong className="block text-slate-900 dark:text-slate-100 font-bold mb-1">
+                      3. 오디오 싱크 밀림 방지
+                    </strong>
+                    <span className="text-slate-600 dark:text-slate-400">
+                      나레이션, 효과음, 배경음악(BGM)을 편집 툴에서 완벽히 믹싱한 단일 MP4 파일로 제출합니다.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Platform 3: YouTube Long-form */}
+          {activePlatform === 'youtube_long' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+              {/* Specs Table */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 shadow-xs border border-slate-100 dark:border-slate-800">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
+                  유튜브 롱폼 및 썸네일 규격
+                </h3>
+                <div className="flex flex-col gap-3 text-xs sm:text-sm">
+                  <div className="flex justify-between py-2.5 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500 font-medium">영상 해상도</span>
+                    <strong className="text-slate-900 dark:text-slate-100">1920 × 1080 (FHD) 또는 4K</strong>
+                  </div>
+                  <div className="flex justify-between py-2.5 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500 font-medium">썸네일 규격</span>
+                    <strong className="text-slate-900 dark:text-slate-100">1280 × 720 px (16:9 / 2MB 이하)</strong>
+                  </div>
+                  <div className="flex justify-between py-2.5 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500 font-medium">권장 영상 길이</span>
+                    <strong className="text-slate-900 dark:text-slate-100">3분 ~ 8분 내외</strong>
+                  </div>
+                  <div className="flex justify-between py-2.5">
+                    <span className="text-slate-500 font-medium">썸네일 주의구역</span>
+                    <strong className="text-slate-900 dark:text-slate-100">우측 하단 타임코드(재생시간) 영역</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Guidelines */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 shadow-xs border border-slate-100 dark:border-slate-800">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
+                  유튜브 제작 핵심 수칙
+                </h3>
+                <ul className="flex flex-col gap-3 list-none p-0 m-0 text-xs sm:text-sm">
+                  <li className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
+                    <strong className="block text-slate-900 dark:text-slate-100 font-bold mb-1">
+                      1. 썸네일 우측 하단 타임코드 회피
+                    </strong>
+                    <span className="text-slate-600 dark:text-slate-400">
+                      유튜브 UI에서 우측 하단은 영상 길이(예: 08:24)가 표시되므로 주요 인물이나 핵심 글자를 배치하지 않습니다.
+                    </span>
+                  </li>
+                  <li className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
+                    <strong className="block text-slate-900 dark:text-slate-100 font-bold mb-1">
+                      2. 미디어센터 공식 소스 라이브러리 활용
+                    </strong>
+                    <span className="text-slate-600 dark:text-slate-400">
+                      고품질 자막 템플릿, 음원, 트랜지션 소스를 위해 미디어센터가 지원하는 상업용 라이브러리 계정을 활용합니다.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Platform 4: Naver Blog */}
+          {activePlatform === 'naver_blog' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+              {/* Specs Table */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 shadow-xs border border-slate-100 dark:border-slate-800">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
+                  네이버 블로그 기사 규격
+                </h3>
+                <div className="flex flex-col gap-3 text-xs sm:text-sm">
+                  <div className="flex justify-between py-2.5 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500 font-medium">대표 썸네일</span>
+                    <strong className="text-slate-900 dark:text-slate-100">1000 × 1000 px (1:1 정사각형)</strong>
+                  </div>
+                  <div className="flex justify-between py-2.5 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500 font-medium">권장 본문 분량</span>
+                    <strong className="text-slate-900 dark:text-slate-100">공백 포함 2,000자 ~ 3,500자</strong>
+                  </div>
+                  <div className="flex justify-between py-2.5">
+                    <span className="text-slate-500 font-medium">사진 첨부</span>
+                    <strong className="text-slate-900 dark:text-slate-100">직접 촬영한 고해상도 사진 12장 이상</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Guidelines */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 shadow-xs border border-slate-100 dark:border-slate-800">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
+                  블로그 검색 최적화 수칙
+                </h3>
+                <ul className="flex flex-col gap-3 list-none p-0 m-0 text-xs sm:text-sm">
+                  <li className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
+                    <strong className="block text-slate-900 dark:text-slate-100 font-bold mb-1">
+                      1. 핵심 검색 키워드 자연스러운 반복
+                    </strong>
+                    <span className="text-slate-600 dark:text-slate-400">
+                      제목 및 본문 소제목에 학우들이 실제 검색하는 키워드(예: 연세대학교, 수강신청 팁, 백양로 맛집 등)를 자연스럽게 포함합니다.
+                    </span>
+                  </li>
+                  <li className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
+                    <strong className="block text-slate-900 dark:text-slate-100 font-bold mb-1">
+                      2. 직접 촬영한 원본 사진 사용
+                    </strong>
+                    <span className="text-slate-600 dark:text-slate-400">
+                      외부 캡처 이미지 대신 기자가 직접 촬영한 원본 사진을 문단 사이에 균형 있게 배치하여 체류 시간을 늘립니다.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ===================== TAB 3: 브랜드 & 비주얼 ===================== */}
+      {activeTab === 'brand' && (
+        <section 
+          id="panel-brand" 
+          role="tabpanel" 
+          aria-labelledby="tab-brand"
+          className="flex flex-col gap-6"
+        >
+          {/* Color Palette Card */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 shadow-xs border border-slate-100 dark:border-slate-800">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 m-0">
+                연세대학교 공식 브랜드 컬러
+              </h2>
+              <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1 m-0">
+                카드를 클릭하면 디자인 툴에서 바로 사용할 수 있는 HEX 코드가 복사됩니다.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { name: 'Yonsei Deep Blue', desc: '공식 메인 로고 및 헤더', hex: '#002454', bgClass: 'bg-[#002454]', textClass: 'text-white' },
+                { name: 'Yonsei Royal Blue', desc: '강조 그래픽 및 뱃지', hex: '#1E3A8A', bgClass: 'bg-[#1E3A8A]', textClass: 'text-white' },
+                { name: 'Yonsei Point Blue', desc: '하이라이트 및 버튼', hex: '#2563EB', bgClass: 'bg-[#2563EB]', textClass: 'text-white' },
+                { name: 'Yonsei Soft Blue', desc: '배경 서피스 및 태그', hex: '#EAF2FF', bgClass: 'bg-[#EAF2FF]', textClass: 'text-[#002454]' },
+              ].map(c => (
+                <div
+                  key={c.hex}
+                  onClick={() => copyToClipboard(c.hex, c.name)}
+                  className={`${c.bgClass} ${c.textClass} rounded-xl p-5 flex flex-col justify-between min-h-[140px] cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-xs`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold">{c.name}</span>
+                    <span className="text-[11px] opacity-80">
+                      {copiedText === c.name ? '✓ 복사됨' : '클릭 복사'}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black tracking-wider tabular-nums">
+                      {c.hex}
+                    </div>
+                    <div className="text-[11px] opacity-75 mt-1">
+                      {c.desc}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          
-        </div>
-      </section>
+
+          {/* Typography Guide */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 shadow-xs border border-slate-100 dark:border-slate-800">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+              공식 권장 무료 상업용 서체 (OFL)
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-5 flex flex-col justify-between">
+                <div>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                    타이틀·헤드라인용
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 my-2">
+                    Pretendard / Gmarket Sans
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed m-0">
+                    볼드 웨이트의 두께감이 뛰어나 표지 타이틀과 주요 강조 문구에 적합합니다.
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400 flex justify-between">
+                  <span>추천 웨이트: <strong>Bold (700) / Black (900)</strong></span>
+                  <span>OFL 라이선스</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-5 flex flex-col justify-between">
+                <div>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
+                    본문·자막용
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 my-2">
+                    KoPubWorld 돋움 / Noto Sans KR
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed m-0">
+                    긴 글이나 영상 자막에서도 뭉개짐 없이 깨끗한 가독성을 유지합니다.
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400 flex justify-between">
+                  <span>추천 웨이트: <strong>Medium (500) / SemiBold (600)</strong></span>
+                  <span>OFL 라이선스</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ===================== TAB 4: 기획 & 취재 섭외 ===================== */}
+      {activeTab === 'planning' && (
+        <section 
+          id="panel-planning" 
+          role="tabpanel" 
+          aria-labelledby="tab-planning"
+          className="flex flex-col gap-6"
+        >
+          {/* Editorial Checklist */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 shadow-xs border border-slate-100 dark:border-slate-800">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+              소재 발굴 및 기획 점검 3원칙
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-5">
+                <span className="text-xs font-bold text-blue-600 dark:text-blue-400">1. 흥미와 동기</span>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 my-2">취재 의도가 명확한가?</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed m-0">
+                  독자에게 전달하고자 하는 핵심 메시지와 기획 의도가 명확히 서 있는 주제인지 점검합니다.
+                </p>
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-5">
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">2. 취재 가능성</span>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 my-2">현실적인 섭외가 가능한가?</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed m-0">
+                  인터뷰이 섭외 및 촬영 장소 협조가 마감 일정(D-Day) 내에 원활히 가능한지 확인합니다.
+                </p>
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-5">
+                <span className="text-xs font-bold text-amber-600 dark:text-amber-400">3. 유용성과 공감대</span>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 my-2">학우들에게 실질적인 도움이 되는가?</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed m-0">
+                  학우들이 '저장'하거나 친구에게 '공유'할 만한 실용적 팁이나 따뜻한 공감대가 포함되어 있는지 확인합니다.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Official Casting DM Template */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 shadow-xs border border-slate-100 dark:border-slate-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 m-0">
+                  공식 취재 및 인터뷰 섭외 DM 양식
+                </h3>
+                <p className="text-slate-500 text-xs mt-1 m-0">
+                  인터뷰이에게 신뢰감을 전달할 수 있는 표준 섭외 양식입니다.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => copyToClipboard(
+                  `안녕하세요, 연세대학교 공식 SNS 기자단 OOO 기자입니다!\n\n이번에 [기획 주제: 예) 연세인 인터뷰] 콘텐츠를 준비하던 중 학우님의 멋진 활동을 접하게 되어 공식 채널을 통해 소개해 드리고자 연락드렸습니다.\n\n- 소요 시간: 약 20~30분 내외 (서면/대면 협의 가능)\n- 혜택: 연세대학교 공식 인스타그램/유튜브 소개 및 소정의 기념품\n\n부담 없이 편하게 답변 주시면 감사하겠습니다. 늘 응원합니다! 😊`,
+                  'DM Template'
+                )}
+                className="self-start sm:self-auto px-4 py-2 rounded-xl bg-[#002454] hover:bg-blue-900 text-white text-xs sm:text-sm font-bold cursor-pointer transition-colors shadow-2xs"
+              >
+                {copiedText === 'DM Template' ? '✓ 복사되었습니다' : '📋 섭외 양식 복사하기'}
+              </button>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-5 text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed font-mono whitespace-pre-wrap">
+{`안녕하세요, 연세대학교 공식 SNS 기자단 OOO 기자입니다!
+
+이번에 [기획 주제: 예) 연세인 인터뷰] 콘텐츠를 준비하던 중 학우님의 멋진 활동을 접하게 되어 공식 채널을 통해 소개해 드리고자 연락드렸습니다.
+
+- 소요 시간: 약 20~30분 내외 (서면/대면 협의 가능)
+- 혜택: 연세대학교 공식 인스타그램/유튜브 소개 및 소정의 기념품
+
+부담 없이 편하게 답변 주시면 감사하겠습니다. 늘 응원합니다! 😊`}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ===================== TAB 5: 저작권 & 초상권 ===================== */}
+      {activeTab === 'copyright' && (
+        <section 
+          id="panel-copyright" 
+          role="tabpanel" 
+          aria-labelledby="tab-copyright"
+          className="flex flex-col gap-6"
+        >
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 shadow-xs border border-slate-100 dark:border-slate-800">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+              저작권 및 초상권 준수 수칙
+            </h2>
+
+            <div className="flex flex-col gap-4">
+              <div className="p-5 rounded-xl bg-slate-50 dark:bg-slate-800/60">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-1.5">
+                  1. 초상권 및 촬영 사전 동의 (필수)
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed m-0">
+                  얼굴이 노출되는 인터뷰 대상자에게는 반드시 <strong>'촬영 및 공식 채널 게시 동의'</strong>를 구두 또는 서면으로 확인해야 합니다. 캠퍼스 스케치 촬영 시 식별 가능한 일반 행인의 얼굴은 블러(모자이크) 처리가 필수입니다.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-xl bg-slate-50 dark:bg-slate-800/60">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-1.5">
+                  2. 상업용 폰트 및 BGM 라이선스 확인
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed m-0">
+                  개인용 무료 폰트나 음원이라도 공식 대학 채널(50만 규모) 게재 시 라이선스 위반이 발생할 수 있습니다. 반드시 <strong>OFL 서체</strong> 또는 미디어센터가 구독 중인 공식 라이브러리 음원만을 사용해야 합니다.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-xl bg-slate-50 dark:bg-slate-800/60">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-1.5">
+                  3. 인용 자료 및 통계 출처 명시
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed m-0">
+                  외부 뉴스, 학술 자료, 통계 데이터를 인용할 때는 슬라이드 또는 본문 하단에 <code className="bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded text-xs">[출처: OOO 통계 2026]</code> 형식으로 명확히 출처를 기재합니다.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

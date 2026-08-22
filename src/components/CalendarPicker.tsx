@@ -45,11 +45,19 @@ export default function CalendarPicker({ initialStartDate, initialEndDate, mode,
   const pad = (n: number) => String(n).padStart(2, '0');
   const formatDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
+  const isPastDate = (day: number) => {
+    const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return d < today;
+  };
+
   const handleDateClick = (day: number) => {
     if (mode === 'disabled') return;
+    if (isPastDate(day)) return;
 
     const clickedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    
+
     if (mode === 'single') {
       setStartDate(clickedDate);
       setEndDate(null);
@@ -109,6 +117,7 @@ export default function CalendarPicker({ initialStartDate, initialEndDate, mode,
     for (let i = 1; i <= daysInMonth; i++) {
       const selected = isSelected(i);
       const inRange = isInRange(i);
+      const isPast = isPastDate(i);
       const d = new Date(year, month, i);
       const isStart = startDate && startDate.getTime() === d.getTime();
       const isEnd = endDate && endDate.getTime() === d.getTime();
@@ -124,12 +133,12 @@ export default function CalendarPicker({ initialStartDate, initialEndDate, mode,
       };
 
       if (inRange) {
-        wrapperStyle.backgroundColor = '#E6F0FF';
+        wrapperStyle.backgroundColor = 'var(--color-range-bg, #E6F0FF)';
       } else if (selected && !isSingle) {
         if (isStart) {
-          wrapperStyle.background = 'linear-gradient(to right, transparent 50%, #E6F0FF 50%)';
+          wrapperStyle.background = 'linear-gradient(to right, transparent 50%, var(--color-range-bg, #E6F0FF) 50%)';
         } else if (isEnd) {
-          wrapperStyle.background = 'linear-gradient(to right, #E6F0FF 50%, transparent 50%)';
+          wrapperStyle.background = 'linear-gradient(to right, var(--color-range-bg, #E6F0FF) 50%, transparent 50%)';
         }
       }
 
@@ -137,20 +146,14 @@ export default function CalendarPicker({ initialStartDate, initialEndDate, mode,
         <div key={i} style={wrapperStyle}>
           <div
             onClick={() => handleDateClick(i)}
-            style={{
-              width: '32px',
-              height: '32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '50%',
-              backgroundColor: selected ? '#0066FF' : 'transparent',
-              color: selected ? '#FFFFFF' : '#334155',
-              fontWeight: selected ? 'bold' : 'normal',
-              cursor: mode === 'disabled' ? 'not-allowed' : 'pointer',
-              zIndex: 1,
-              transition: 'all 0.2s'
-            }}
+            className={`w-8 h-8 flex items-center justify-center rounded-full text-[0.88rem] transition-[color,background-color,box-shadow] duration-200 ${
+              isPast
+                ? 'text-slate-300 dark:text-slate-600 font-medium'
+                : selected
+                ? 'bg-blue-600 text-white font-bold shadow-sm'
+                : 'text-slate-800 dark:text-slate-100 font-medium hover:bg-slate-100 dark:hover:bg-slate-800'
+            } ${mode === 'disabled' || isPast ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+            style={{ zIndex: 1 }}
           >
             {i}
           </div>
@@ -168,10 +171,8 @@ export default function CalendarPicker({ initialStartDate, initialEndDate, mode,
   };
 
   return (
-    <div style={{
-      backgroundColor: '#ffffff',
+    <div className="card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700" style={{
       borderRadius: '16px',
-      border: '1px solid #e2e8f0',
       padding: '24px 12px',
       width: '100%',
       maxWidth: '100%',
@@ -185,26 +186,26 @@ export default function CalendarPicker({ initialStartDate, initialEndDate, mode,
     }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <div style={{ backgroundColor: '#F1F5F9', padding: '6px 12px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 'bold', color: '#334155' }}>
+        <div className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700" style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 'bold' }}>
           {getModeText()}
         </div>
       </div>
 
       {/* Month Navigator */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 8px' }}>
-        <button type="button" onClick={handlePrevMonth} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#334155' }}>{'<'}</button>
-        <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>
+        <button type="button" onClick={handlePrevMonth} className="text-slate-600 dark:text-slate-300" style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>{'<'}</button>
+        <div className="text-slate-900 dark:text-slate-100" style={{ fontSize: '1.2rem', fontWeight: 800 }}>
           {currentDate.getMonth() + 1}월
         </div>
-        <button type="button" onClick={handleNextMonth} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#334155' }}>{'>'}</button>
+        <button type="button" onClick={handleNextMonth} className="text-slate-600 dark:text-slate-300" style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>{'>'}</button>
       </div>
 
       {/* Calendar Grid */}
       <div>
         {/* Weekdays */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', textAlign: 'center', marginBottom: '8px' }}>
-          {DAYS_OF_WEEK.map(day => (
-            <div key={day} style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>{day}</div>
+          {DAYS_OF_WEEK.map((day, i) => (
+            <div key={day} className={`text-[0.85rem] font-bold ${i === 0 ? 'text-red-500 dark:text-red-400' : i === 6 ? 'text-blue-500 dark:text-blue-400' : 'text-slate-400 dark:text-slate-400'}`}>{day}</div>
           ))}
         </div>
         

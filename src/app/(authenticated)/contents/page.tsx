@@ -1,31 +1,34 @@
 import { createClient } from "@/utils/supabase/server";
 import ContentsLayout from "@/components/ContentsLayout";
 import { isTraineeContent } from "@/utils/trainee";
+import { Suspense } from 'react';
+import Loading from '../loading';
+
+export const dynamic = 'force-dynamic';
 
 async function ContentsPageContent({ searchParams }: { searchParams: { openModalId?: string } }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const userEmail = user?.email || null;
   
-  let realName = user?.user_metadata?.full_name || user?.user_metadata?.name || null;
-  if (userEmail) {
-    const { data: profile } = await supabase.from('contents').select('author_name').eq('title', `PROFILE_${userEmail}`).maybeSingle();
-    if (profile?.author_name) {
-      realName = profile.author_name;
-    }
-  }
+  // [성능 최적화] 프로필 조회와 콘텐츠 목록 조회를 Promise.all로 병렬 실행
+  const [{ data: profile }, { data: dbContents }] = await Promise.all([
+    userEmail
+      ? supabase.from('contents').select('author_name').eq('title', `PROFILE_${userEmail}`).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase
+      .from('contents')
+      .select('id, title, author_name, team, content_type, status, created_at, final_url, target_date, description, keywords, intent, feedback_comment, content_body')
+      .neq('content_type', 'SYSTEM_PROFILE')
+      .neq('title', 'SYSTEM_DEADLINES')
+      .neq('content_type', 'NOTICE')
+      .neq('status', 'draft')
+      .neq('status', 'deleted')
+      .order('created_at', { ascending: false })
+      .range(0, 49)
+  ]);
 
-  // Fetch contents without heavy content_body and paginated to 50 items
-  const { data: dbContents } = await supabase
-    .from('contents')
-    .select('id, title, author_name, team, content_type, status, created_at, final_url, target_date, description, keywords, intent, feedback_comment')
-    .neq('content_type', 'SYSTEM_PROFILE')
-    .neq('title', 'SYSTEM_DEADLINES')
-    .neq('content_type', 'NOTICE')
-    .neq('status', 'draft')
-    .neq('status', 'deleted')
-    .order('created_at', { ascending: false })
-    .range(0, 49);
+  let realName = profile?.author_name || user?.user_metadata?.full_name || user?.user_metadata?.name || null;
   const contents = (dbContents || []) as any[];
   // Filter out Trainee (수습 단원 / 25기) contents from regular contents page
   const processedContents = (contents || [])
@@ -74,9 +77,6 @@ async function ContentsPageContent({ searchParams }: { searchParams: { openModal
     />
   );
 }
-
-import { Suspense } from 'react';
-import Loading from '../loading';
 
 export default function ContentsPage({ searchParams }: any) {
   return (

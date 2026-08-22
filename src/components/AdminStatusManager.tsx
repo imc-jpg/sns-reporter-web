@@ -62,13 +62,13 @@ export default function AdminStatusManager({
   };
 
   return (
-    <div style={{ 
-      backgroundColor: '#ffffff', 
-      borderRadius: '14px', 
-      border: '1px solid #E2E8F0', 
-      padding: '6px 10px', 
-      display: 'flex', 
-      alignItems: 'center', 
+    <div style={{
+      backgroundColor: 'var(--color-card-bg)',
+      borderRadius: '14px',
+      border: 'none',
+      padding: '6px 10px',
+      display: 'flex',
+      alignItems: 'center',
       justifyContent: 'space-between',
       gap: '6px',
       boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
@@ -82,8 +82,8 @@ export default function AdminStatusManager({
           title="이전 단계로 롤백"
           style={{
             border: 'none',
-            backgroundColor: (isSaving || status === 'pending') ? '#F1F5F9' : '#E2E8F0',
-            color: (isSaving || status === 'pending') ? '#94A3B8' : '#334155',
+            backgroundColor: 'var(--color-surface)',
+            color: 'var(--color-text-muted)',
             borderRadius: '6px',
             width: '28px',
             height: '28px',
@@ -93,7 +93,8 @@ export default function AdminStatusManager({
             cursor: (isSaving || status === 'pending') ? 'not-allowed' : 'pointer',
             fontSize: '0.75rem',
             fontWeight: 800,
-            transition: 'all 0.15s'
+            transition: 'all 0.15s',
+            opacity: (isSaving || status === 'pending') ? 0.5 : 1
           }}
         >
           ◀
@@ -107,12 +108,12 @@ export default function AdminStatusManager({
             flex: 1,
             padding: '2px 6px',
             fontSize: '0.78rem',
-            fontWeight: 700,
+            fontWeight: 500,
             height: '28px',
-            border: '1px solid #CBD5E1',
+            border: 'none',
             borderRadius: '6px',
-            backgroundColor: '#F8FAFC',
-            color: '#0F172A',
+            backgroundColor: 'var(--input-glass-bg)',
+            color: 'var(--color-text-main)',
             outline: 'none',
             cursor: 'pointer'
           }}
@@ -129,8 +130,8 @@ export default function AdminStatusManager({
           title="다음 단계로 승인"
           style={{
             border: 'none',
-            backgroundColor: (isSaving || status === 'uploaded' || status === 'completed') ? '#93C5FD' : '#1E3A8A',
-            color: 'white',
+            backgroundColor: (isSaving || status === 'uploaded' || status === 'completed') ? 'var(--color-surface)' : '#1E3A8A',
+            color: (isSaving || status === 'uploaded' || status === 'completed') ? 'var(--color-text-muted)' : 'white',
             borderRadius: '6px',
             width: '28px',
             height: '28px',
@@ -154,8 +155,8 @@ export default function AdminStatusManager({
           onClick={onDelete}
           title="이 콘텐츠 삭제"
           style={{
-            border: '1px solid #FCA5A5',
-            backgroundColor: '#FEF2F2',
+            border: 'none',
+            backgroundColor: 'rgba(239, 68, 68, 0.12)',
             color: '#EF4444',
             borderRadius: '6px',
             padding: '0 8px',

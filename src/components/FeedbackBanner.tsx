@@ -34,28 +34,27 @@ export default function FeedbackBanner({ feedbacks }: { feedbacks: any[] }) {
           href={`/${item.status.includes('final') ? 'final-works' : 'proposals'}/submit?id=${item.id}`}
           style={{ 
             textDecoration: 'none', 
-            background: 'linear-gradient(to right, #FFFBEB, #FEF3C7)', 
-            border: '1px solid #FDE68A', 
-            borderRadius: '12px', 
-            padding: '1rem 1.25rem', 
+            background: 'linear-gradient(to right, rgba(255, 251, 235, 0.95), rgba(254, 243, 199, 0.9))', 
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            borderRadius: '18px', 
+            padding: '0.9rem 1.25rem', 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'space-between',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
-            transition: 'transform 0.2s'
+            boxShadow: '0 4px 16px rgba(245, 158, 11, 0.08)'
           }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+          className="motion-row motion-btn"
         >
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-            <div style={{ background: '#F59E0B', color: 'white', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
+            <div style={{ background: '#F59E0B', color: 'white', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.82rem', flexShrink: 0, boxShadow: '0 2px 6px rgba(245, 158, 11, 0.3)' }}>
               !
             </div>
             <div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#92400E', marginBottom: '0.2rem' }}>
-                새로운 피드백이 도착했습니다: {item.title}
+              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#92400E', letterSpacing: '-0.01em', marginBottom: '0.15rem' }}>
+                새로운 피드백이 도착했습니다: <span style={{ color: '#78350F' }}>{item.title}</span>
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#B45309', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+              <div style={{ fontSize: '0.78rem', color: '#B45309', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.4 }}>
                 {item.feedback_comment || '수정 요청이 등록되었습니다. 확인해주세요.'}
               </div>
             </div>
@@ -66,12 +65,13 @@ export default function FeedbackBanner({ feedbacks }: { feedbacks: any[] }) {
               background: 'none', 
               border: 'none', 
               cursor: 'pointer', 
-              color: '#D97706', 
-              fontSize: '1.5rem', 
-              padding: '0.5rem', 
+              color: '#B45309', 
+              fontSize: '1.3rem', 
+              padding: '0.35rem', 
               lineHeight: 1,
               flexShrink: 0 
             }}
+            className="motion-scale"
             aria-label="닫기"
           >
             &times;

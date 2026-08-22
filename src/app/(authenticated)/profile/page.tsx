@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { cleanAuthorName } from '@/utils/dateUtils';
 import { useRouter } from 'next/navigation';
 
 export default function ProfilePage() {
@@ -23,9 +24,10 @@ export default function ProfilePage() {
       if (user) {
         // DB 백업에서 최우선으로 가져오기
         const { data: profile } = await supabase.from('contents').select('team, author_name, keywords').eq('title', `PROFILE_${user.email}`).single();
+        const rawName = profile?.author_name || user.user_metadata?.full_name || user.user_metadata?.name || '';
         
         setFormData({
-          name: profile?.author_name || user.user_metadata?.full_name || user.user_metadata?.name || '',
+          name: cleanAuthorName(rawName),
           team: profile?.team || user.user_metadata?.team || '',
           gen: profile?.keywords || user.user_metadata?.gen || ''
         });
@@ -115,23 +117,23 @@ export default function ProfilePage() {
   }
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-      <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--color-primary)' }}>내 프로필 설정</h2>
-      <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem', fontSize: '0.875rem' }}>
+    <div className="animate-enter" style={{ maxWidth: '640px', margin: '0 auto', paddingBottom: '3rem' }}>
+      <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.4rem', color: 'var(--color-text-heading)', letterSpacing: '-0.02em' }}>내 프로필 설정</h2>
+      <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.75rem', fontSize: '0.88rem', lineHeight: 1.6 }}>
         최초 1회 설정이 필요합니다. 이름과 소속 팀을 저장해 두시면 기획안 작성 시 자동으로 채워지며, 진행 현황을 파악하기 위해 반드시 기입해야 합니다.
       </p>
 
       {message && (
-        <div style={{ padding: '1rem', backgroundColor: message.includes('실패') ? '#fee2e2' : '#dcfce7', color: message.includes('실패') ? '#ef4444' : '#15803d', borderRadius: '8px', marginBottom: '1.5rem', fontWeight: 500, fontSize: '0.9rem' }}>
+        <div style={{ padding: '0.9rem 1.25rem', backgroundColor: message.includes('실패') ? 'rgba(254, 242, 242, 0.9)' : 'rgba(240, 253, 244, 0.9)', backdropFilter: 'blur(8px)', color: message.includes('실패') ? '#EF4444' : '#15803D', borderRadius: '14px', marginBottom: '1.5rem', fontWeight: 700, fontSize: '0.88rem', border: message.includes('실패') ? '1px solid rgba(254, 202, 202, 0.8)' : '1px solid rgba(187, 247, 208, 0.8)' }}>
           {message}
         </div>
       )}
 
-      <div className="card">
-        <form onSubmit={handleSubmit} className="flex-col gap-4">
+      <div className="card motion-card">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <div className="flex-col gap-2" style={{ flex: 1 }}>
-              <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>기수</label>
+            <div className="flex flex-col gap-2" style={{ flex: 1 }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-main)' }}>기수</label>
               <input 
                 type="text" 
                 inputMode="numeric"
@@ -141,10 +143,11 @@ export default function ProfilePage() {
                 onChange={handleChange} 
                 placeholder="예: 24" 
                 required 
+                style={{ padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid var(--color-border)', backgroundColor: 'var(--input-glass-bg)', color: 'var(--color-text-main)', fontSize: '0.9rem', outline: 'none' }}
               />
             </div>
-            <div className="flex-col gap-2" style={{ flex: 3 }}>
-              <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>이름 (기자단 활동명)</label>
+            <div className="flex flex-col gap-2" style={{ flex: 3 }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-main)' }}>이름 (기자단 활동명)</label>
               <input 
                 type="text" 
                 name="name" 
@@ -152,18 +155,19 @@ export default function ProfilePage() {
                 onChange={handleChange} 
                 placeholder="예: 홍길동" 
                 required 
+                style={{ padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid var(--color-border)', backgroundColor: 'var(--input-glass-bg)', color: 'var(--color-text-main)', fontSize: '0.9rem', outline: 'none' }}
               />
             </div>
           </div>
           
-          <div className="flex-col gap-2">
-            <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>소속 팀</label>
+          <div className="flex flex-col gap-2">
+            <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-main)' }}>소속 팀</label>
             <select 
               name="team" 
               value={formData.team} 
               onChange={handleChange} 
               required 
-              style={{ padding: '0.6rem', border: '1px solid var(--color-border)', borderRadius: '6px', width: '100%' }}
+              style={{ padding: '0.75rem 1rem', border: '1px solid var(--color-border)', borderRadius: '12px', backgroundColor: 'var(--input-glass-bg)', color: 'var(--color-text-main)', fontSize: '0.9rem', width: '100%', outline: 'none' }}
             >
               <option value="" disabled>-- 팀 선택 --</option>
               <option value="유튜브">유튜브</option>
@@ -173,7 +177,12 @@ export default function ProfilePage() {
             </select>
           </div>
 
-          <button type="submit" className="btn-primary" disabled={isSaving} style={{ marginTop: '1rem' }}>
+          <button 
+            type="submit" 
+            className="motion-btn" 
+            disabled={isSaving} 
+            style={{ marginTop: '0.75rem', padding: '0.85rem', borderRadius: '14px', backgroundColor: '#002454', color: 'white', border: 'none', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 14px rgba(0, 36, 84, 0.15)' }}
+          >
             {isSaving ? '저장 중...' : '프로필 저장하기'}
           </button>
         </form>

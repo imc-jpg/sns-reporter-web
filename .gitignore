@@ -40,3 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 scratch/
+# [B16] service_role 키가 평문으로 포함된 임시 스크립트 — git 추적 방지
+scratch*.js

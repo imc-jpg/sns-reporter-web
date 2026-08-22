@@ -41,16 +41,16 @@ function MonthCalendar({ year, month, contents }: { year: number; month: number;
   const dotColors = ['#003378', '#F59E0B', '#10B981', '#EF4444', '#8B5CF6'];
 
   return (
-    <div style={{ background: 'white', borderRadius: '16px', padding: '1.25rem', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+    <div className="card" style={{ padding: '1.25rem', borderRadius: '16px' }}>
       <div style={{ marginBottom: '1rem' }}>
-        <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b' }}>
+        <span className="text-slate-900 dark:text-slate-100" style={{ fontSize: '1.1rem', fontWeight: 800 }}>
           {MONTH_NAMES[month]} {year}
         </span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', marginBottom: '0.4rem' }}>
         {DAYS.map((d, i) => (
-          <div key={d} style={{ textAlign: 'center', fontSize: '0.72rem', fontWeight: 700, color: i === 0 ? '#EF4444' : i === 6 ? '#3B82F6' : '#94A3B8', padding: '0.2rem 0' }}>
+          <div key={d} className={`text-center text-[0.72rem] font-bold py-1 ${i === 0 ? 'text-red-500 dark:text-red-400' : i === 6 ? 'text-blue-500 dark:text-blue-400' : 'text-slate-400 dark:text-slate-400'}`}>
             {d}
           </div>
         ))}
@@ -60,16 +60,19 @@ function MonthCalendar({ year, month, contents }: { year: number; month: number;
         {fullCells.map((cell, idx) => {
           const events = cell.current ? getEventsForDay(cell.day) : [];
           const today_ = cell.current && isToday(cell.day);
-          const textColor = !cell.current ? '#D1D5DB' : isSun(idx) ? '#EF4444' : isSat(idx) ? '#3B82F6' : '#1e293b';
           return (
             <div key={idx} style={{ padding: '0.25rem 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-              <div style={{
-                width: '28px', height: '28px', borderRadius: '50%',
-                backgroundColor: today_ ? '#003378' : 'transparent',
-                color: today_ ? 'white' : textColor,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '0.82rem', fontWeight: today_ ? 800 : 500,
-              }}>
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[0.82rem] ${
+                today_ 
+                  ? 'bg-[#003378] dark:bg-blue-600 text-white font-extrabold' 
+                  : !cell.current 
+                  ? 'text-slate-300 dark:text-slate-600 font-normal' 
+                  : isSun(idx) 
+                  ? 'text-red-500 dark:text-red-400 font-semibold' 
+                  : isSat(idx) 
+                  ? 'text-blue-600 dark:text-blue-400 font-semibold' 
+                  : 'text-slate-800 dark:text-slate-100 font-medium'
+              }`}>
                 {cell.day}
               </div>
               {events.length > 0 && (
