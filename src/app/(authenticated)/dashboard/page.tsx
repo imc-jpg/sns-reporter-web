@@ -51,6 +51,7 @@ async function DashboardPageContent({ searchParams }: PageProps) {
     .neq('content_type', 'SYSTEM_PROFILE')
     .neq('title', 'SYSTEM_DEADLINES')
     .neq('status', 'draft')
+    .neq('status', 'deleted')
     .gte('created_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
     .order('created_at', { ascending: false })
     .range(0, 49);

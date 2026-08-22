@@ -192,7 +192,7 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
 
       if (initialId) {
         const { data: current, error } = await supabase.from('contents').select('*').eq('id', initialId).single();
-        if (current) {
+        if (current && current.status !== 'deleted') {
           setSelectedProposal(current);
           
           if (!allProps.find(p => p.id.toString() === initialId)) {

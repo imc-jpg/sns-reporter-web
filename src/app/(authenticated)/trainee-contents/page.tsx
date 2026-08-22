@@ -27,6 +27,7 @@ async function TraineeContentsPageContent({ searchParams }: { searchParams: { op
     .neq('title', 'SYSTEM_DEADLINES')
     .neq('content_type', 'NOTICE')
     .neq('status', 'draft')
+    .neq('status', 'deleted')
     .order('created_at', { ascending: false })
     .range(0, 99);
     

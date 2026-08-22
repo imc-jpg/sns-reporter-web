@@ -17,6 +17,7 @@ export default async function MobilePage() {
     .neq('content_type', 'SYSTEM_PROFILE')
     .neq('title', 'SYSTEM_DEADLINES')
     .neq('status', 'draft')
+    .neq('status', 'deleted')
     .order('created_at', { ascending: false })
     .limit(50);
 

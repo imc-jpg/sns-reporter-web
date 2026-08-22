@@ -29,6 +29,7 @@ export default async function ProposalsListPage({ searchParams }: PageProps) {
     .neq('content_type', 'SYSTEM_PROFILE')
     .neq('title', 'SYSTEM_DEADLINES')
     .neq('status', 'draft') // Hide drafts from list
+    .neq('status', 'deleted') // Hide deleted from list
     .order('created_at', { ascending: false })
     .range(0, 49);
 

@@ -67,9 +67,18 @@ export async function deleteContent(contentId: string, deleteOnlyFinalWork: bool
       
     if (error) return { success: false, error: error.message };
   } else {
+    let body: any = {};
+    try { body = JSON.parse(content.content_body || '{}'); } catch {}
+    body.deletedAt = new Date().toISOString();
+    body.deletedBy = user.email;
+    body.deletedByName = userName || user.email;
+
     const { error } = await supabase
       .from('contents')
-      .delete()
+      .update({
+        status: 'deleted',
+        content_body: JSON.stringify(body)
+      })
       .eq('id', contentId);
 
     if (error) {
@@ -81,6 +90,8 @@ export async function deleteContent(contentId: string, deleteOnlyFinalWork: bool
   revalidatePath('/dashboard');
   revalidatePath('/proposals');
   revalidatePath('/final-works');
+  revalidatePath('/calendar');
+  revalidatePath('/trainee-contents');
 
   return { success: true };
 }

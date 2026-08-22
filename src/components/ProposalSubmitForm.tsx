@@ -241,16 +241,16 @@ export default function ProposalSubmitForm({ embeddedId, onSuccess, onCancel, is
 
   const handleDeleteDraft = async (draftId: number) => {
     if (!confirm('이 임시저장 내역을 삭제하시겠습니까?')) return;
-    await supabase.from('contents').delete().eq('id', draftId);
+    await supabase.from('contents').update({ status: 'deleted' }).eq('id', draftId);
     setDrafts(prev => prev.filter(d => d.id !== draftId));
   };
 
   const handleDelete = async () => {
     if (!idToEdit) return;
-    if (!confirm('정말로 이 기획안을 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.')) return;
+    if (!confirm('정말로 이 기획안을 삭제하시겠습니까? 삭제 후에는 목록에서 숨김 처리됩니다.')) return;
     
     setIsSubmitting(true);
-    const { error } = await supabase.from('contents').delete().eq('id', idToEdit);
+    const { error } = await supabase.from('contents').update({ status: 'deleted' }).eq('id', idToEdit);
     setIsSubmitting(false);
 
     if (error) {

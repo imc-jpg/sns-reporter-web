@@ -188,7 +188,7 @@ export default function ContentsLayout({
     e.stopPropagation();
     if (type === 'proposal') {
        if (!confirm('기획안 임시저장 내역을 삭제하시겠습니까?')) return;
-       await supabase.from('contents').delete().eq('id', draftId);
+       await supabase.from('contents').update({ status: 'deleted' }).eq('id', draftId);
        setUnifiedDrafts(prev => ({ ...prev, proposals: prev.proposals.filter(d => d.id !== draftId) }));
     } else {
        if (!confirm('완성본 임시저장 내역을 삭제하시겠습니까? 기획안 데이터는 유지됩니다.')) return;
@@ -452,7 +452,7 @@ export default function ContentsLayout({
     try {
       const { error } = await supabase
         .from('contents')
-        .delete()
+        .update({ status: 'deleted' })
         .in('id', selectedForDelete);
         
       if (error) throw error;
@@ -531,27 +531,10 @@ export default function ContentsLayout({
         discussions: updatedDiscussions
       };
 
-      // Automatic status transition rules based on comment author:
-      let newStatus = selectedContent!.status;
-      if (isAdmin) {
-        // 관리자가 피드백 댓글을 남길 경우 -> '수정 대기'로 자동 이관
-        if (selectedContent!.status === 'pending' || selectedContent!.status === 'review_required') {
-          newStatus = 'revision';
-        } else if (selectedContent!.status === 'final_submitted') {
-          newStatus = 'final_revision';
-        }
-      } else {
-        // 단원이 댓글을 남길 경우 -> '검토 필요'로 자동 전환
-        if (selectedContent!.status === 'revision' || selectedContent!.status === 'final_revision' || selectedContent!.status === 'approved') {
-          newStatus = 'review_required';
-        }
-      }
-
       const { error } = await supabase
         .from('contents')
         .update({
-          content_body: JSON.stringify(updatedBody),
-          status: newStatus
+          content_body: JSON.stringify(updatedBody)
         })
         .eq('id', selectedContent!.id);
 
