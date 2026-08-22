@@ -629,8 +629,21 @@ export default function MobileSubmitModal({ isOpen, onClose, mode, user, allProf
         const isFinalAlready = ['completed', 'uploaded', 'final_submitted', 'final_revision'].includes(item.status) || !!item.final_url;
         if (isFinalAlready) return false;
         let authorEmail = '';
-        try { authorEmail = JSON.parse(item.content_body || '{}').authorEmail || ''; } catch {}
-        const isOwn = !!(user?.email && authorEmail && authorEmail === user.email);
+        let crewString = '';
+        try {
+          const b = JSON.parse(item.content_body || '{}');
+          authorEmail = b.authorEmail || '';
+          crewString = typeof b.crew === 'string' ? b.crew : Array.isArray(b.crew) ? b.crew.map((c: any) => c.name || c).join(',') : '';
+        } catch {}
+        if (!crewString && item.description) {
+          crewString = item.description;
+        }
+        const isOwnAuthor = (user?.email && authorEmail && authorEmail === user.email) ||
+                            (user?.email && item.author_name === user.email) ||
+                            (authorName && item.author_name?.includes(authorName));
+        const isCrew = (user?.email && crewString.includes(user.email)) ||
+                       (authorName && crewString.includes(authorName));
+        const isOwn = isOwnAuthor || isCrew;
         return isAdminUser || isOwn;
       })
     : [];

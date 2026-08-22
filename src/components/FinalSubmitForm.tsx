@@ -184,7 +184,7 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
 
       const { data: props } = await supabase
         .from('contents')
-        .select('id, title, author_name, content_type')
+        .select('id, title, author_name, content_type, content_body, description')
         .in('status', ['approved', 'final_submitted', 'revision', 'completed', 'uploaded']);
       
       let allProps = props || [];
@@ -197,7 +197,7 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
           setSelectedProposal(current);
           
           if (!allProps.find(p => p.id.toString() === initialId)) {
-            allProps = [{ id: current.id, title: current.title, author_name: current.author_name, content_type: current.content_type }, ...allProps];
+            allProps = [{ id: current.id, title: current.title, author_name: current.author_name, content_type: current.content_type, content_body: current.content_body, description: current.description }, ...allProps];
           }
 
           let discussions: any[] = [];
@@ -261,8 +261,19 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
       if (!isAdminFlag && userEmail) {
           // Filter available proposals to those the user is author or participant of
           allProps = allProps.filter(p => {
-             if (p.author_name === userEmail || (userName && p.author_name?.includes(userName))) return true;
-             return false; // we'd need body to fully check crew, but this list is just for selection. If embeddedId is used, selection is hidden anyway.
+             let emailInJson = '';
+             let crewString = '';
+             try {
+               const b = JSON.parse(p.content_body || '{}');
+               emailInJson = b.authorEmail || '';
+               crewString = typeof b.crew === 'string' ? b.crew : Array.isArray(b.crew) ? b.crew.map((c: any) => c.name || c).join(',') : '';
+             } catch {}
+             if (!crewString && p.description) {
+               crewString = p.description;
+             }
+             const isAuthor = (emailInJson && emailInJson === userEmail) || p.author_name === userEmail || (userName && p.author_name?.includes(userName));
+             const isCrew = (userEmail && crewString.includes(userEmail)) || (userName && crewString.includes(userName));
+             return isAuthor || isCrew;
           });
       }
 
