@@ -25,7 +25,7 @@ async function ContentsPageContent({ searchParams }: { searchParams: { openModal
       .neq('status', 'draft')
       .neq('status', 'deleted')
       .order('created_at', { ascending: false })
-      .range(0, 49)
+      .range(0, 499)
   ]);
 
   let realName = profile?.author_name || user?.user_metadata?.full_name || user?.user_metadata?.name || null;

@@ -26,8 +26,9 @@ export default async function AdminContentsPage() {
       .neq('title', 'SYSTEM_DEADLINES')
       .neq('content_type', 'NOTICE')
       .neq('status', 'draft')
+      .neq('status', 'deleted')
       .order('created_at', { ascending: false })
-      .range(0, 99),
+      .range(0, 499),
     supabase
       .from('contents')
       .select('title, author_name, keywords, team')

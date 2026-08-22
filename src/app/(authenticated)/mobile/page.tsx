@@ -23,7 +23,7 @@ export default async function MobilePage() {
       .neq('status', 'draft')
       .neq('status', 'deleted')
       .order('created_at', { ascending: false })
-      .limit(50),
+      .limit(499),
     supabase
       .from('contents')
       .select('author_name, keywords')

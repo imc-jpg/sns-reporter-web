@@ -30,7 +30,7 @@ export default async function ProposalsListPage({ searchParams }: PageProps) {
       .neq('status', 'draft')
       .neq('status', 'deleted')
       .order('created_at', { ascending: false })
-      .range(0, 49)
+      .range(0, 499)
   ]);
 
   let realName = profile?.author_name || user?.user_metadata?.full_name || user?.user_metadata?.name || null;
@@ -38,15 +38,18 @@ export default async function ProposalsListPage({ searchParams }: PageProps) {
   const currentDate = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
   const currentMonth = currentDate.getMonth() + 1;
   const currentYear = currentDate.getFullYear();
+  const currentMonthPrefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
 
   const processedContents = (contents || [])
     .map(item => {
       let emailInJson = '';
       let crewString = '';
+      let targetMonth = '';
       try {
         if ((item as any).content_body && (item as any).content_body.startsWith('{')) {
           const obj = JSON.parse((item as any).content_body);
           emailInJson = obj.authorEmail || '';
+          targetMonth = obj.targetMonth || '';
           if (typeof obj.crew === 'string') {
             crewString = obj.crew;
           } else if (Array.isArray(obj.crew)) {
@@ -61,13 +64,14 @@ export default async function ProposalsListPage({ searchParams }: PageProps) {
                              (realName && item.author_name?.includes(realName)));
       const isCrew = user && realName && crewString.includes(realName);
       const isMine = isAuthor || isCrew;
-      return { ...item, isMine, isAuthor, isCrew };
+      return { ...item, isMine, isAuthor, isCrew, targetMonth };
     })
     .filter(item => !isTraineeContent(item));
 
   let monthContents = processedContents.filter(item => {
-    const itemDate = new Date(new Date(item.created_at).toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
-    return itemDate.getMonth() + 1 === currentMonth && itemDate.getFullYear() === currentYear;
+    const itemDateStr = item.created_at ? item.created_at.split('T')[0] : '';
+    const itemMonth = item.targetMonth || itemDateStr.substring(0, 7);
+    return itemMonth === currentMonthPrefix;
   }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   if (filterByMine) {

@@ -18,7 +18,7 @@ export default async function FinalWorksListPage() {
       .select('id, title, author_name, team, content_type, status, created_at, final_url, target_date, description, keywords, intent, feedback_comment, content_body')
       .in('status', ['final_submitted', 'final_revision', 'completed', 'uploaded'])
       .order('created_at', { ascending: false })
-      .range(0, 49)
+      .range(0, 499)
   ]);
 
   let realName = profile?.author_name || user?.user_metadata?.full_name || user?.user_metadata?.name || null;
@@ -26,12 +26,14 @@ export default async function FinalWorksListPage() {
   const currentDate = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
   const currentMonth = currentDate.getMonth() + 1;
   const currentYear = currentDate.getFullYear();
+  const currentMonthPrefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
 
   const rawContents = (contents || []).map(item => {
     let isDraft = false;
     let desiredDate = "-";
     let emailInJson = '';
     let crewString = '';
+    let targetMonth = '';
 
     if ((item as any).content_body && (item as any).content_body.startsWith('{')) {
       try {
@@ -40,6 +42,7 @@ export default async function FinalWorksListPage() {
         if (parsed.desiredDate) {
           desiredDate = parsed.desiredDate;
         }
+        targetMonth = parsed.targetMonth || '';
         emailInJson = parsed.authorEmail || '';
         if (typeof parsed.crew === 'string') {
           crewString = parsed.crew;
@@ -56,11 +59,12 @@ export default async function FinalWorksListPage() {
     const isCrew = user && realName && crewString.includes(realName);
     const isMine = isAuthor || isCrew;
 
-    return { ...item, isDraft, desiredDate, isMine, isAuthor, isCrew };
+    return { ...item, isDraft, desiredDate, isMine, isAuthor, isCrew, targetMonth };
   }).filter(item => !isTraineeContent(item))
   .filter(item => {
-    const itemDate = new Date(new Date(item.created_at).toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
-    return itemDate.getMonth() + 1 === currentMonth && itemDate.getFullYear() === currentYear;
+    const itemDateStr = item.created_at ? item.created_at.split('T')[0] : '';
+    const itemMonth = item.targetMonth || itemDateStr.substring(0, 7);
+    return itemMonth === currentMonthPrefix;
   }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const getTeamColor = (team: string) => {

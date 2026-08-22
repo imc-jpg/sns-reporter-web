@@ -24,7 +24,7 @@ async function TraineeContentsPageContent({ searchParams }: { searchParams: { op
       .neq('status', 'draft')
       .neq('status', 'deleted')
       .order('created_at', { ascending: false })
-      .range(0, 99)
+      .range(0, 499)
   ]);
 
   let realName = profile?.author_name || user?.user_metadata?.full_name || user?.user_metadata?.name || null;
