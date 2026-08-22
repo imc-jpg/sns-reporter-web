@@ -391,9 +391,22 @@ export default function ContentDetailModal({ contentId, onClose }: ContentDetail
 
   const youtubeVideoId = getYoutubeVideoId(content?.final_url || bodyObj.finalUrl || '');
   const gdInfo = getGoogleDriveInfo(content?.final_url || bodyObj.finalUrl || '');
+  let crewStr = '';
+  try {
+    const b = JSON.parse(content?.content_body || '{}');
+    crewStr = typeof b.crew === 'string' ? b.crew : Array.isArray(b.crew) ? b.crew.map((c: any) => c.name || c).join(',') : '';
+  } catch {}
+  if (!crewStr && content?.description) {
+    crewStr = content.description;
+  }
+  const isOwnAuthor = !!((currentUser?.email && bodyObj.authorEmail === currentUser.email) ||
+                      (currentUser?.email && content?.author_name === currentUser.email) ||
+                      (currentUser?.name && content?.author_name?.includes(currentUser.name)));
+  const isCrew = !!((currentUser?.email && crewStr.includes(currentUser.email)) ||
+                 (currentUser?.name && crewStr.includes(currentUser.name)));
   const finalLink = content?.final_url || bodyObj.finalUrl || '';
-
-  const canDelete = currentUser?.isAdmin || (currentUser?.name && content?.author_name?.includes(currentUser.name)) || (currentUser?.email && bodyObj.authorEmail === currentUser.email);
+  const canEdit = currentUser?.isAdmin || isOwnAuthor || isCrew;
+  const canDelete = currentUser?.isAdmin || isOwnAuthor || isCrew;
 
   return createPortal(
     <div
@@ -628,6 +641,18 @@ export default function ContentDetailModal({ contentId, onClose }: ContentDetail
                       </CopyableBlock>
                     </div>
                   )}
+
+                  {canEdit && (
+                    <div className="pt-2">
+                      <a
+                        href={`/proposals/submit?id=${content.id}`}
+                        className="motion-btn w-full py-3.5 px-4 bg-[#1E3A8A] hover:bg-blue-900 text-white rounded-2xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 shadow-md transition-all active:scale-98"
+                      >
+                        <span>✏️</span>
+                        <span>기획안 수정하기</span>
+                      </a>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col gap-5">
@@ -740,6 +765,18 @@ export default function ContentDetailModal({ contentId, onClose }: ContentDetail
                       </div>
                     )}
                   </div>
+
+                  {canEdit && (
+                    <div className="pt-2">
+                      <a
+                        href={`/final-works/submit?id=${content.id}`}
+                        className="motion-btn w-full py-3.5 px-4 bg-[#1E3A8A] hover:bg-blue-900 text-white rounded-2xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 shadow-md transition-all active:scale-98"
+                      >
+                        <span>🎬</span>
+                        <span>완성본 등록 / 수정하기</span>
+                      </a>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -756,6 +793,19 @@ export default function ContentDetailModal({ contentId, onClose }: ContentDetail
                 }}
                 onDelete={canDelete ? handleDeleteContent : undefined}
               />
+            </div>
+          )}
+
+          {content && !currentUser?.isAdmin && canDelete && (
+            <div className="flex justify-end pt-1">
+              <button
+                onClick={handleDeleteContent}
+                disabled={isDeleting}
+                className="text-xs font-bold text-rose-500 hover:text-rose-700 dark:text-rose-400 p-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <span>🗑️</span>
+                <span>{isDeleting ? '삭제 중...' : '콘텐츠 삭제'}</span>
+              </button>
             </div>
           )}
 
