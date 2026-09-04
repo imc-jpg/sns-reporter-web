@@ -22,10 +22,15 @@ export function isTraineeContent(item: any): boolean {
 
   const fullText = `${authorName} ${team} ${title} ${keywords} ${crewString} ${description}`;
   
-  // 25기, 26기 등 수습기수 또는 '수습' 키워드가 포함되어 있는지 체크
+  // 25기 단원은 정단원으로 전환되어 기존 단원과 함께 전체 콘텐츠에 통합 표시됩니다.
+  if (fullText.includes('25기') && !fullText.includes('26기') && !fullText.includes('27기')) {
+    return false;
+  }
+
+  // 26기 이상 수습 기수 또는 (25기가 아닌) '수습' 키워드가 포함된 경우만 수습 단원 콘텐츠로 분류합니다.
   return (
-    fullText.includes('25기') ||
     fullText.includes('26기') ||
-    fullText.includes('수습')
+    fullText.includes('27기') ||
+    (fullText.includes('수습') && !fullText.includes('25기'))
   );
 }

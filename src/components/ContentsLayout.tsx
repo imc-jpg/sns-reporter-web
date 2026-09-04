@@ -106,7 +106,7 @@ export default function ContentsLayout({
   const supabase = createClient();
 
   const isTraineeMode = propsIsTraineeMode || (pageTitle ? pageTitle.includes('수습') : false);
-  const [selectedGen, setSelectedGen] = useState<string>('25기');
+  const [selectedGen, setSelectedGen] = useState<string>('26기');
 
   const getGen = (item: any) => {
     if (!item) return '25기';

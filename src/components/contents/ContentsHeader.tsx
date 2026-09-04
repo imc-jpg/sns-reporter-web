@@ -37,7 +37,7 @@ export default function ContentsHeader({
   onOpenNewFinalModal,
   pageTitle,
   isTraineeMode = false,
-  selectedGen = '25기',
+  selectedGen = '26기',
   onGenChange
 }: ContentsHeaderProps) {
   const [showMonthDropdown, setShowMonthDropdown] = useState(false);
