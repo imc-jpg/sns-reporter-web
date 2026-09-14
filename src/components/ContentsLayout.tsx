@@ -19,6 +19,8 @@ import { sanitizeHtml } from '@/utils/sanitize';
 import { recommendHashtagsFromContent, cleanAuthorName } from '@/utils/dateUtils';
 import ContentsHeader from '@/components/contents/ContentsHeader';
 import UnifiedDraftsModal from '@/components/contents/UnifiedDraftsModal';
+import { canViewSecretComment, isUserContentOwnerOrCrew, matchesName } from '@/utils/accessControl';
+
 
 
 // Helper to parse simple markdown to HTML (Bold, Italic, Strikethrough, Safe Links)
@@ -498,40 +500,27 @@ export default function ContentsLayout({
 
   
   const canViewSecret = (msg: any) => {
-    if (!msg.isSecret) return true;
-    const authorName = selectedContent?.author_name || '';
-    
-    // Parse crew
-    const crewStr = (() => {
-      try {
-        return JSON.parse(selectedContent?.content_body || '{}').crew || '';
-      } catch (e) { return ''; }
-    })();
-
-    const currentUserFullName = currentUserName || '';
-    const isAdmin = isGlobalAdmin;
-    const isCommentAuthor = msg.author && (msg.author === currentUserFullName || msg.author === currentUserEmail);
-    
-    return isAdmin || isCommentAuthor || (currentUserFullName && (authorName.includes(currentUserFullName) || crewStr.includes(currentUserFullName))) || (currentUserEmail && crewStr.includes(currentUserEmail));
+    return canViewSecretComment({
+      msg,
+      currentUser: {
+        name: currentUserName,
+        email: currentUserEmail,
+        isAdmin: isGlobalAdmin,
+      },
+      contentAuthorName: selectedContent?.author_name,
+      contentBody: selectedContent?.content_body,
+    });
   };
 
   const canDeleteContent = (item: any) => {
     if (!item) return false;
-    let emailInJson = '';
-    try {
-      const obj = JSON.parse(item.content_body || '{}');
-      emailInJson = obj.author_email || '';
-    } catch (e) {}
-
-    const isOwnAuthor = currentUserEmail && (
-      emailInJson === currentUserEmail || 
-      item.author_name === currentUserEmail || 
-      item.author_name === currentUserName ||
-      (currentUserName && item.author_name?.includes(currentUserName))
+    if (isGlobalAdmin) return true;
+    return isUserContentOwnerOrCrew(
+      { author_name: item.author_name, content_body: item.content_body },
+      { email: currentUserEmail, name: currentUserName }
     );
-    const isAdmin = isGlobalAdmin;
-    return isOwnAuthor || isAdmin;
   };
+
 
   const handleDeleteSelected = async () => {
     if (!confirm('정말로 삭제하시겠습니까?')) return;

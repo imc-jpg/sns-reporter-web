@@ -1,7 +1,14 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
+import {
+  canViewSecretComment,
+  isUserContentOwnerOrCrew,
+  matchesName,
+} from '@/utils/accessControl';
+
 
 interface RealtimeToast {
   id: string;
@@ -46,7 +53,9 @@ export function RealtimeNotificationProvider({
   const [toasts, setToasts] = useState<RealtimeToast[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  const router = useRouter();
   const supabase = createClient();
+
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -127,9 +136,10 @@ export function RealtimeNotificationProvider({
             bodyObj = {};
           }
 
-          const authorEmail = bodyObj.authorEmail || '';
-          const crew = bodyObj.crew || '';
-          const isMyContent = userEmail === authorEmail || (userName && crew.includes(userName)) || crew.includes(userEmail);
+          const isMyContent = isUserContentOwnerOrCrew(
+            { author_name: newRecord.author_name, content_body: bodyObj },
+            { email: userEmail, name: userName }
+          );
 
           // 1. UPDATE 이벤트 처리 (상태 변경 또는 댓글 추가)
           if (eventType === 'UPDATE' && oldRecord) {
@@ -147,17 +157,31 @@ export function RealtimeNotificationProvider({
             if (newDiscussions.length > oldDiscussions.length) {
               const latestComment = newDiscussions[newDiscussions.length - 1];
               // 내가 작성한 댓글이 아닌 경우에만 알림
-              if (latestComment && latestComment.author !== userName && latestComment.authorEmail !== userEmail) {
-                if (isMyContent || isAdmin) {
+              const isMyOwnComment =
+                (userEmail && latestComment?.authorEmail && latestComment.authorEmail.toLowerCase() === userEmail.toLowerCase()) ||
+                (userName && latestComment?.author && matchesName(latestComment.author, userName));
+
+              if (latestComment && !isMyOwnComment) {
+                const canView = canViewSecretComment({
+                  msg: latestComment,
+                  currentUser: { name: userName, email: userEmail, isAdmin },
+                  contentAuthorName: newRecord.author_name,
+                  contentBody: bodyObj,
+                });
+
+                if (canView && (isMyContent || isAdmin)) {
                   addToast({
-                    title: `💬 [${newRecord.title || '콘텐츠'}] 새 코멘트`,
-                    message: `${latestComment.author || '누군가'}: "${(latestComment.text || '').slice(0, 35)}..."`,
+                    title: latestComment.isSecret
+                      ? `🔒 [${newRecord.title || '콘텐츠'}] 비밀 피드백`
+                      : `💬 [${newRecord.title || '콘텐츠'}] 새 코멘트`,
+                    message: `${latestComment.author || '관리자'}: "${(latestComment.text || '').slice(0, 35)}..."`,
                     type: 'comment',
                     contentId: newRecord.id,
                   });
                 }
               }
             }
+
 
             // 상태가 변경되었는지 확인
             if (newRecord.status !== oldRecord.status && isMyContent) {
@@ -216,9 +240,15 @@ export function RealtimeNotificationProvider({
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            onClick={() => removeToast(toast.id)}
+            onClick={() => {
+              removeToast(toast.id);
+              if (toast.contentId) {
+                router.push(`/contents?openModalId=${toast.contentId}`);
+              }
+            }}
             className="pointer-events-auto bg-slate-900/95 text-white p-3.5 rounded-2xl shadow-2xl border border-slate-700/60 backdrop-blur-md flex items-start gap-3 cursor-pointer hover:bg-slate-800 transition-all animate-in fade-in slide-in-from-top-4 duration-300"
           >
+
             <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center flex-shrink-0 text-base font-bold">
               {toast.type === 'comment' ? '💬' : toast.type === 'status' ? '📢' : '📝'}
             </div>

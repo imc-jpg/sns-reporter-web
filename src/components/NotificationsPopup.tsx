@@ -98,13 +98,25 @@ export default function NotificationsPopup({ userEmail, userName }: { userEmail:
               ) : (
                 notifications.map(noti => (
                   <Link 
-                    key={noti.id} 
-                    href={`/${noti.status?.includes('final') ? 'final-works' : 'proposals'}/submit?id=${noti.id}`}
+                    key={`${noti.id}-${noti.comment_id || noti.created_at}`} 
+                    href={`/contents?openModalId=${noti.id}`}
                     onClick={() => setIsOpen(false)}
                     className="block p-4 border-b border-slate-100 dark:border-slate-800/80 transition-colors bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/70"
                   >
-                    <div className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">{noti.title}</div>
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <div className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{noti.title}</div>
+                      {noti.is_secret && (
+                        <span className="shrink-0 text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 font-bold px-1.5 py-0.5 rounded">
+                          🔒 비밀
+                        </span>
+                      )}
+                    </div>
                     <div className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed bg-slate-100 dark:bg-slate-800/80 p-2 rounded-md">
+                      {noti.comment_author && (
+                        <span className="font-bold text-slate-700 dark:text-slate-200 mr-1">
+                          [{noti.comment_author}]
+                        </span>
+                      )}
                       💬 {noti.feedback_comment || '상태가 변경되었습니다. 확인해주세요.'}
                     </div>
                     <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 text-right">

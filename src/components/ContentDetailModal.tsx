@@ -8,6 +8,7 @@ import CopyableBlock from './CopyableBlock';
 import { sanitizeHtml } from '@/utils/sanitize';
 import { YoutubeIcon, InstagramIcon, NaverBlogIcon, GenericPostIcon } from '@/components/platformIcons';
 import { deleteContent } from '@/app/actions/content';
+import { canViewSecretComment } from '@/utils/accessControl';
 
 const parseCommentMarkdown = (text: string): string => {
   if (!text) return '';
@@ -189,15 +190,14 @@ export default function ContentDetailModal({ contentId, onClose }: ContentDetail
   );
 
   const canViewSecret = (msg: any) => {
-    if (!msg.isSecret) return true;
-    if (!currentUser) return false;
-    const authorName = content?.author_name || '';
-    const crewStr = bodyObj.crew || '';
-    if (currentUser.isAdmin) return true;
-    if (currentUser.name && (authorName.includes(currentUser.name) || crewStr.includes(currentUser.name))) return true;
-    if (currentUser.email && crewStr.includes(currentUser.email)) return true;
-    return false;
+    return canViewSecretComment({
+      msg,
+      currentUser,
+      contentAuthorName: content?.author_name,
+      contentBody: bodyObj,
+    });
   };
+
 
   const handleAddComment = async (parentId: number | null, text: string, imageUrl?: string | null, secret?: boolean) => {
     if (!text.trim() && !imageUrl) return;

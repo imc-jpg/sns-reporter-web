@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { sanitizeHtml } from '@/utils/sanitize';
 import { cleanAuthorName } from '@/utils/dateUtils';
+import { canViewSecretComment, isUserContentOwnerOrCrew } from '@/utils/accessControl';
+
 
 // 기획안(0)/완성본(1)/채팅방(2) 3요소를 "같은 위계"의 화면으로 취급해, 예전엔
 // MobileDetailModal(기획안·완성본)과 MobileCommentsPage(채팅방)가 서로 다른 틀
@@ -442,11 +444,15 @@ export default function MobileTrioModal({ isOpen, screen, onScreenChange, onClos
 
   const bodyObj = parseBody(item);
   const isAdmin = user?.email === 'admin@admin.com' || user?.user_metadata?.is_admin === true;
-  const isOwnContent = !!(user?.email && bodyObj.authorEmail && user.email === bodyObj.authorEmail);
-  const hasFinalContent = ['final_submitted', 'final_revision', 'completed', 'uploaded'].includes(item.status) || !!item.final_url;
-  const hasUnresolvedFeedback = String(item.status || '').includes('revision');
   const rawName = user?.user_metadata?.full_name || user?.user_metadata?.name;
   const displayName = cleanAuthorName(rawName) || user?.email?.split('@')[0] || '기자';
+  const isOwnContent = isUserContentOwnerOrCrew(
+    { author_name: item.author_name, content_body: item.content_body },
+    { email: user?.email, name: displayName }
+  );
+  const hasFinalContent = ['final_submitted', 'final_revision', 'completed', 'uploaded'].includes(item.status) || !!item.final_url;
+  const hasUnresolvedFeedback = String(item.status || '').includes('revision');
+
 
   const persist = async (nextDiscussions: any[], statusOverride?: string) => {
     const updatedBody = { ...bodyObj, discussions: nextDiscussions };
@@ -584,6 +590,16 @@ export default function MobileTrioModal({ isOpen, screen, onScreenChange, onClos
     const isMyComment = comment.author === displayName || (user?.email && comment.authorEmail === user.email);
     const canManageComment = isAdmin || isMyComment;
     const isEditing = editingCommentId === comment.id;
+    const isSecretVisible = canViewSecretComment({
+      msg: comment,
+      currentUser: {
+        name: displayName,
+        email: user?.email,
+        isAdmin,
+      },
+      contentAuthorName: item.author_name,
+      contentBody: item.content_body,
+    });
 
     return (
       <div
@@ -600,6 +616,11 @@ export default function MobileTrioModal({ isOpen, screen, onScreenChange, onClos
             <div className="flex items-center justify-between gap-1.5">
               <div className="flex items-center gap-1.5 min-w-0">
                 <span title={comment.author} className={`font-extrabold text-slate-900 truncate ${depth > 0 ? 'text-xs' : 'text-sm'}`}>{comment.author}</span>
+                {comment.isSecret && (
+                  <span className="text-[9px] font-extrabold bg-amber-100 text-amber-800 px-1 py-0.5 rounded flex-shrink-0">
+                    🔒 비밀
+                  </span>
+                )}
                 <span className="text-[10px] text-slate-600 font-medium flex-shrink-0">{comment.createdAt ? relativeTime(comment.createdAt) : ''}</span>
                 {comment.isEdited && <span className="text-[9px] text-slate-600 flex-shrink-0">(수정됨)</span>}
               </div>
@@ -638,9 +659,10 @@ export default function MobileTrioModal({ isOpen, screen, onScreenChange, onClos
             ) : (
               <div
                 className={`text-slate-700 leading-relaxed break-words mt-0.5 ${depth > 0 ? 'text-xs' : 'text-sm'}`}
-                dangerouslySetInnerHTML={{ __html: (comment.isSecret && !canManageComment) ? '🔒 비밀댓글입니다.' : sanitizeHtml(parseCommentMarkdown(comment.text)) }}
+                dangerouslySetInnerHTML={{ __html: (comment.isSecret && !isSecretVisible) ? '🔒 비밀댓글입니다.' : sanitizeHtml(parseCommentMarkdown(comment.text)) }}
               />
             )}
+
 
             <div className="flex items-center gap-3 mt-1.5">
               <span className="text-[11px] text-slate-400 font-bold">{comment.likes || 0} Likes</span>

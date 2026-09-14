@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import {
+  canViewSecretComment,
+  isUserContentOwnerOrCrew,
+  matchesName,
+} from '@/utils/accessControl';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,7 +13,6 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    // [B17] isAdmin을 URL 파라미터가 아닌 서버 측 user 메타데이터로 판단
     if (!user) {
       return NextResponse.json({ notifications: [] });
     }
@@ -29,48 +33,103 @@ export async function GET(request: Request) {
     const userName = user.user_metadata?.full_name || user.user_metadata?.name || null;
     const realName = profileData?.author_name || userName || null;
 
-    // [B7] content_body를 select에 추가하여 crew/이메일 매칭 복구
-    const { data: contents } = await supabase
+    const currentUser = {
+      email: userEmail,
+      name: realName,
+      isAdmin,
+    };
+
+    // Note: contents table uses created_at, NOT updated_at
+    const { data: contents, error: fetchError } = await supabase
       .from('contents')
-      .select('id, title, status, feedback_comment, updated_at, author_name, content_body')
+      .select('id, title, status, feedback_comment, created_at, author_name, content_body')
       .neq('content_type', 'SYSTEM_PROFILE')
       .neq('title', 'SYSTEM_DEADLINES')
       .neq('status', 'draft')
-      .order('updated_at', { ascending: false })
-      .limit(30);
+      .order('id', { ascending: false })
+      .limit(40);
 
-    if (!contents) {
+    if (fetchError || !contents) {
+      console.error('Error fetching contents for notifications:', fetchError);
       return NextResponse.json({ notifications: [] });
     }
 
-    const rawContents = contents.map(item => {
-      let emailInJson = '', crewString = '';
-      if (item.content_body?.startsWith('{')) {
-        try {
-          const pb = JSON.parse(item.content_body);
-          emailInJson = pb.authorEmail || '';
-          if (typeof pb.crew === 'string') crewString = pb.crew;
-          else if (Array.isArray(pb.crew)) crewString = pb.crew.map((c: any) => c.name || '').join(',');
-        } catch {}
+    const notifications: any[] = [];
+
+    for (const item of contents) {
+      let bodyObj: any = {};
+      try {
+        bodyObj = JSON.parse(item.content_body || '{}');
+      } catch {
+        bodyObj = {};
       }
 
-      const isAuthor = emailInJson === userEmail || item.author_name === userEmail || item.author_name === realName || (realName && item.author_name?.includes(realName));
-      const isCrew = realName && crewString.includes(realName);
-      const isMine = !!(isAuthor || isCrew);
+      const isMine = isUserContentOwnerOrCrew(item, currentUser);
 
-      // content_body는 응답에 포함하지 않음 (용량 절감)
-      const { content_body: _omit, ...rest } = item;
-      return { ...rest, isMine };
-    });
+      // A user is notified about their own contents, or admins are notified about all contents
+      if (!isMine && !isAdmin) {
+        continue;
+      }
 
-    const myContents = isAdmin ? rawContents : rawContents.filter(i => i.isMine);
+      const discussions: any[] = Array.isArray(bodyObj.discussions) ? bodyObj.discussions : [];
 
-    const myRecentFeedbacks = myContents
-      .filter(item => (item.feedback_comment && item.feedback_comment.trim() !== '') || item.status.includes('revision'))
-      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-      .slice(0, 15);
+      // 1. Check discussion comments
+      for (const disc of discussions) {
+        // Skip user's own comments
+        const isMyOwnDisc =
+          (userEmail && disc.authorEmail && disc.authorEmail.toLowerCase() === userEmail.toLowerCase()) ||
+          (realName && disc.author && matchesName(disc.author, realName));
 
-    return NextResponse.json({ notifications: myRecentFeedbacks });
+        if (isMyOwnDisc) continue;
+
+        // If user is admin, only notify if the comment is from a student/writer/crew
+        if (isAdmin && !isMine && disc.role === 'admin') continue;
+
+        // Check if current user can view this comment (handles secret comments)
+        const canView = canViewSecretComment({
+          msg: disc,
+          currentUser,
+          contentAuthorName: item.author_name,
+          contentBody: bodyObj,
+        });
+
+        if (canView) {
+          notifications.push({
+            id: item.id,
+            comment_id: disc.id,
+            title: item.title,
+            status: item.status,
+            feedback_comment: disc.text,
+            comment_author: disc.author || (disc.role === 'admin' ? '관리자' : '기자'),
+            is_secret: !!disc.isSecret,
+            created_at: disc.createdAt || item.created_at,
+            type: 'comment',
+          });
+        }
+      }
+
+      // 2. Check status revision or legacy feedback_comment
+      if (item.status?.includes('revision') || (item.feedback_comment && item.feedback_comment.trim() !== '')) {
+        const hasDiscForThis = notifications.some(n => n.id === item.id);
+        if (!hasDiscForThis) {
+          notifications.push({
+            id: item.id,
+            title: item.title,
+            status: item.status,
+            feedback_comment: item.feedback_comment || (item.status.includes('final') ? '완성본 수정 요청 (피드백 확인 필요)' : '기획안 수정 요청 (피드백 확인 필요)'),
+            comment_author: '관리자',
+            is_secret: false,
+            created_at: item.created_at,
+            type: 'status',
+          });
+        }
+      }
+    }
+
+    // Sort by created_at descending
+    notifications.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    return NextResponse.json({ notifications: notifications.slice(0, 25) });
   } catch (error) {
     console.error('Error fetching notifications API:', error);
     return NextResponse.json({ notifications: [] }, { status: 500 });
