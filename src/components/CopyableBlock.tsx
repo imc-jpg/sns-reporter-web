@@ -33,7 +33,6 @@ export default function CopyableBlock({
   style = {},
   disabled = false
 }: CopyableBlockProps) {
-  const [isHovered, setIsHovered] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopy = (e: React.MouseEvent) => {
@@ -53,65 +52,68 @@ export default function CopyableBlock({
       setIsCopied(true);
       setTimeout(() => {
         setIsCopied(false);
-      }, 1300);
+      }, 1500);
     }
   };
 
   return (
     <div
-      onMouseEnter={() => !disabled && setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={handleCopy}
-      className={`relative group transition-colors duration-150 ${!disabled ? 'cursor-pointer select-none' : ''} ${className}`}
-      style={{ position: 'relative', overflow: 'hidden', ...style }}
-      title={!disabled ? "클릭하여 복사" : undefined}
+      className={`relative group select-text ${className}`}
+      style={{
+        position: 'relative',
+        userSelect: 'text',
+        WebkitUserSelect: 'text',
+        ...style
+      }}
     >
-      {label && <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-main, #1E293B)', marginBottom: '6px' }}>{label}</div>}
-      
-      {htmlContent ? (
-        <div 
-          className="rich-text-content" 
-          dangerouslySetInnerHTML={{ __html: sanitizeHtml(htmlContent) }} 
-        />
-      ) : (
-        <div className="rich-text-content">
-          {children}
+      {/* 라벨 (전달된 경우 표시) */}
+      {label && (
+        <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-main, #1E293B)', marginBottom: '6px' }}>
+          {label}
         </div>
       )}
 
-      {/* Hover & Copied Overlay (Smooth Fade In/Out Motion) */}
+      {/* 우측 상단 전용 복사 버튼: 마우스 드래그/선택을 방해하지 않는 깔끔한 버튼 */}
       {!disabled && (
-        <div
-          className="copyable-overlay"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            borderRadius: 'inherit',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px',
-            fontSize: '0.84rem',
-            fontWeight: 700,
-            backdropFilter: 'blur(4px)',
-            opacity: (isHovered || isCopied) ? 1 : 0,
-            transform: (isHovered || isCopied) ? 'scale(1)' : 'scale(0.98)',
-            pointerEvents: (isHovered || isCopied) ? 'auto' : 'none',
-            transition: 'opacity 0.24s cubic-bezier(0.4, 0, 0.2, 1), transform 0.24s cubic-bezier(0.4, 0, 0.2, 1)',
-            zIndex: 10
-          }}
+        <button
+          type="button"
+          onClick={handleCopy}
+          title={isCopied ? '복사되었습니다' : '전체 복사'}
+          aria-label="내용 복사"
+          className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/95 dark:bg-slate-800/95 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 shadow-2xs backdrop-blur-xs opacity-80 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-150 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-100 cursor-pointer select-none"
         >
           {isCopied ? (
-            <div className="copyable-copied-content" style={{ display: 'flex', alignItems: 'center', gap: '6px', animation: 'fadeIn 0.2s ease-out', background: 'transparent', backgroundColor: 'transparent', color: '#93C5FD', border: 'none', boxShadow: 'none' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ background: 'transparent' }}><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span style={{ background: 'transparent', backgroundColor: 'transparent' }}>복사되었습니다!</span>
-            </div>
+            <>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span className="text-green-600 dark:text-green-400 font-bold text-[11px]">복사됨</span>
+            </>
           ) : (
-            <div className="copyable-hover-content" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', backgroundColor: 'transparent', color: '#FFFFFF', border: 'none', boxShadow: 'none' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ background: 'transparent' }}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-              <span style={{ background: 'transparent', backgroundColor: 'transparent' }}>클릭하여 복사</span>
-            </div>
+            <>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              <span className="text-[11px]">복사</span>
+            </>
           )}
+        </button>
+      )}
+
+      {/* 본문 내용: 자유롭게 드래그 및 텍스트 선택 가능 */}
+      {htmlContent ? (
+        <div 
+          className="rich-text-content select-text" 
+          style={{ userSelect: 'text', WebkitUserSelect: 'text' }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(htmlContent) }} 
+        />
+      ) : (
+        <div 
+          className="rich-text-content select-text"
+          style={{ userSelect: 'text', WebkitUserSelect: 'text' }}
+        >
+          {children}
         </div>
       )}
     </div>

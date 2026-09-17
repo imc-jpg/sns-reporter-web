@@ -103,9 +103,6 @@ export default function MobileTrioModal({ isOpen, screen, onScreenChange, onClos
     return () => clearTimeout(t);
   }, [toastMsg]);
 
-  // 내용 블록 탭-투-카피 (기획안/완성본 전용) — 정지 상태에서 한 번 탭하면 "탭하여
-  // 복사" 확인 상태로 바뀌고, 한 번 더 탭하면 실제 복사된다.
-  const [copyArmedField, setCopyArmedField] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const htmlToPlainText = (html: string) => {
     if (typeof document === 'undefined') return html.replace(/<[^>]*>/g, '');
@@ -116,75 +113,67 @@ export default function MobileTrioModal({ isOpen, screen, onScreenChange, onClos
     div.innerHTML = withBreaks;
     return (div.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
   };
-  const handleBlockTap = (fieldKey: string, getPlainText: () => string) => {
-    if (copyArmedField === fieldKey) {
-      navigator.clipboard?.writeText(getPlainText()).catch(() => {});
-      setCopyArmedField(null);
-      setCopiedField(fieldKey);
-      setTimeout(() => setCopiedField(null), 1300);
-    } else {
-      setCopyArmedField(fieldKey);
-    }
+
+  const handleCopyText = (fieldKey: string, text: string) => {
+    if (!text) return;
+    navigator.clipboard?.writeText(text).catch(() => {});
+    setCopiedField(fieldKey);
+    setTimeout(() => setCopiedField(null), 1500);
   };
+
   const renderCopyableBlock = (fieldKey: string, label: string, html: string) => {
-    const isArmed = copyArmedField === fieldKey;
     const isCopied = copiedField === fieldKey;
-    const isVisible = isArmed || isCopied;
     return (
-      <div
-        onClick={(e) => { e.stopPropagation(); handleBlockTap(fieldKey, () => htmlToPlainText(html)); }}
-        className="relative bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-xs space-y-1.5 cursor-pointer active:scale-[0.99] transition-transform overflow-hidden"
-      >
-        <div className="text-xs font-bold text-slate-800 dark:text-slate-200">{label}</div>
+      <div className="relative bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-xs space-y-1.5 select-text">
+        <div className="flex items-center justify-between">
+          <div className="text-xs font-bold text-slate-800 dark:text-slate-200">{label}</div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCopyText(fieldKey, htmlToPlainText(html));
+            }}
+            className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-md active:bg-slate-200 cursor-pointer select-none"
+          >
+            {isCopied ? <span className="text-blue-600 dark:text-blue-400 font-bold">✓ 복사됨</span> : <span>복사</span>}
+          </button>
+        </div>
         <div
-          className="rich-text-content text-xs text-slate-700 dark:text-slate-300 leading-relaxed"
+          className="rich-text-content text-xs text-slate-700 dark:text-slate-300 leading-relaxed select-text"
           dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }}
         />
-        <div 
-          className={`absolute inset-0 rounded-2xl flex items-center justify-center gap-1.5 text-xs font-black transition-[opacity,transform,background-color,color] duration-200 ease-out backdrop-blur-xs ${
-            isVisible ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
-          } ${
-            isCopied 
-              ? 'bg-[#002454]/95 dark:bg-blue-600/95 text-white' 
-              : 'bg-slate-900/85 dark:bg-slate-800/95 text-white'
-          }`}
-        >
-          {isCopied ? <>✓ 복사되었습니다</> : <>📋 탭하여 복사</>}
-        </div>
       </div>
     );
   };
+
   const renderHashtagBlock = (fieldKey: string, hashtags: string[]) => {
-    const isArmed = copyArmedField === fieldKey;
     const isCopied = copiedField === fieldKey;
-    const isVisible = isArmed || isCopied;
     return (
-      <div
-        onClick={(e) => { e.stopPropagation(); handleBlockTap(fieldKey, () => hashtags.map(kw => `#${kw}`).join(' ')); }}
-        className="relative bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-xs space-y-2 cursor-pointer active:scale-[0.99] transition-transform overflow-hidden"
-      >
-        <div className="text-xs font-bold text-slate-800 dark:text-slate-200">#해시태그</div>
-        <div className="flex flex-wrap gap-1.5">
+      <div className="relative bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-xs space-y-2 select-text">
+        <div className="flex items-center justify-between">
+          <div className="text-xs font-bold text-slate-800 dark:text-slate-200">#해시태그</div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCopyText(fieldKey, hashtags.map(kw => `#${kw}`).join(' '));
+            }}
+            className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-md active:bg-slate-200 cursor-pointer select-none"
+          >
+            {isCopied ? <span className="text-blue-600 dark:text-blue-400 font-bold">✓ 복사됨</span> : <span>복사</span>}
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-1.5 select-text">
           {hashtags.map((kw, i) => (
-            <span key={i} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold">
+            <span key={i} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold select-text">
               #{kw}
             </span>
           ))}
         </div>
-        <div 
-          className={`absolute inset-0 rounded-2xl flex items-center justify-center gap-1.5 text-xs font-black transition-[opacity,transform,background-color,color] duration-200 ease-out backdrop-blur-xs ${
-            isVisible ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
-          } ${
-            isCopied 
-              ? 'bg-[#002454]/95 dark:bg-blue-600/95 text-white' 
-              : 'bg-slate-900/85 dark:bg-slate-800/95 text-white'
-          }`}
-        >
-          {isCopied ? <>✓ 복사되었습니다</> : <>📋 탭하여 복사</>}
-        </div>
       </div>
     );
   };
+
 
   // FLIP: 카드의 화면 좌표(originRect)에서 시작해 부모(셸 프레임) 전체 크기로
   // 커지는 transform을 계산한다 — 지금은 이 prop을 넘기는 호출부가 없어 실제로는

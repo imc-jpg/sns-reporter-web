@@ -2115,41 +2115,6 @@ html.mobile-rem-base.dark [class~="glass-cta-sky"] {
   color: #FFFFFF !important;
 }
 
-/* CopyableBlock Dark/Light Mode Overlay Styles */
-.copyable-overlay {
-  background-color: rgba(15, 23, 42, 0.65) !important;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  color: #ffffff;
-}
-
-.copyable-hover-content,
-.copyable-hover-content *,
-html[data-theme="dark"] .copyable-hover-content,
-html[data-theme="dark"] .copyable-hover-content *,
-html.dark .copyable-hover-content,
-html.dark .copyable-hover-content * {
-  background: transparent !important;
-  background-color: transparent !important;
-  border: none !important;
-  color: #ffffff !important;
-  box-shadow: none !important;
-  font-weight: 700 !important;
-}
-
-.copyable-copied-content,
-.copyable-copied-content *,
-html[data-theme="dark"] .copyable-copied-content,
-html[data-theme="dark"] .copyable-copied-content *,
-html.dark .copyable-copied-content,
-html.dark .copyable-copied-content * {
-  background: transparent !important;
-  background-color: transparent !important;
-  border: none !important;
-  color: #93C5FD !important;
-  box-shadow: none !important;
-  font-weight: 700 !important;
-}
 
 /* 외부 붙여넣기(노션/워드/구글독스 등)로 유입된 인라인 텍스트 배경색 강제 제거 및 다크모드 가독성 보장 */
 .rich-text-content,
