@@ -412,7 +412,13 @@ export default function MobileSubmitModal({ isOpen, onClose, mode, user, allProf
         // 이 콘텐츠(effectiveTargetItem)에 완성본을 연결 — 새 글을 만들지 않고 기존
         // 행을 완성본 전용 필드로 업데이트한다. PC FinalSubmitForm.tsx의 handleSubmit과
         // 동일한 필드 매핑(postContent/finalKeywords/finalCrew/finalDescription).
-        const { data: current } = await supabase.from('contents').select('content_body').eq('id', effectiveTargetItem.id).single();
+        const { data: current } = await supabase.from('contents').select('status, content_body').eq('id', effectiveTargetItem.id).single();
+        if (!current || (!['approved', 'final_submitted', 'final_revision', 'completed', 'uploaded'].includes(current.status) && !isAdminUser)) {
+          setToastMsg('기획안이 관리자 승인을 받은 상태에서만 완성본을 등록할 수 있습니다.');
+          setIsSubmitting(false);
+          return;
+        }
+
         let bodyData: any = {};
         try { if (current?.content_body) bodyData = JSON.parse(current.content_body); } catch (e) {}
 
@@ -626,6 +632,7 @@ export default function MobileSubmitModal({ isOpen, onClose, mode, user, allProf
   const isAdminUser = user?.email === 'admin@admin.com' || user?.user_metadata?.is_admin === true;
   const candidateItems = mode === 'final' && !targetItem && !pickedTargetItem
     ? contents.filter(item => {
+        if (item.status !== 'approved') return false;
         const isFinalAlready = ['completed', 'uploaded', 'final_submitted', 'final_revision'].includes(item.status) || !!item.final_url;
         if (isFinalAlready) return false;
         let authorEmail = '';

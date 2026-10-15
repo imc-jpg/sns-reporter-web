@@ -95,8 +95,10 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
     const profile = allProfiles.find(p => p.author_name === cleanName || p.author_name === trimmed);
     if (profile && profile.keywords) {
       const kw = profile.keywords.toString().trim();
-      const generation = kw.endsWith('기') ? kw : `${kw}기`;
-      return `${generation} ${cleanName}`;
+      const genMatch = kw.match(/^(\d+)기?$/);
+      if (genMatch) {
+        return `${genMatch[1]}기 ${cleanName}`;
+      }
     }
     return trimmed;
   };
@@ -167,8 +169,10 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
         const profile = loadedProfiles.find(p => p.author_name === cleanName || p.author_name === trimmed);
         if (profile && profile.keywords) {
           const kw = profile.keywords.toString().trim();
-          const generation = kw.endsWith('기') ? kw : `${kw}기`;
-          return `${generation} ${cleanName}`;
+          const genMatch = kw.match(/^(\d+)기?$/);
+          if (genMatch) {
+            return `${genMatch[1]}기 ${cleanName}`;
+          }
         }
         return trimmed;
       };
@@ -194,6 +198,14 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
       if (initialId) {
         const { data: current, error } = await supabase.from('contents').select('*').eq('id', initialId).single();
         if (current && current.status !== 'deleted') {
+          const isEligible = ['approved', 'final_submitted', 'final_revision', 'completed', 'uploaded'].includes(current.status);
+          if (!isEligible && !isAdminFlag) {
+            alert('기획안이 관리자 승인(통과)을 받은 후에만 완성본을 등록할 수 있습니다.');
+            if (onCancel) onCancel();
+            else router.push('/contents');
+            return;
+          }
+
           setSelectedProposal(current);
           
           if (!allProps.find(p => p.id.toString() === initialId)) {
@@ -247,7 +259,7 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
           if (!isAdminFlag && !authorFlag) {
              setIsReadOnly(true);
           } else {
-             setIsReadOnly(current.status !== 'approved');
+             setIsReadOnly(!['approved', 'final_submitted', 'final_revision'].includes(current.status));
           }
         } else {
           // If the requested proposal was deleted from DB
@@ -429,9 +441,13 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
       alert('대상 기획안을 선택해주세요.');
       return;
     }
-    setIsSubmitting(true);
+    const { data: current } = await supabase.from('contents').select('status, content_body').eq('id', formData.proposalId).single();
+    if (!current || (!['approved', 'final_submitted', 'final_revision'].includes(current.status) && !isAdmin)) {
+      alert('기획안이 관리자 승인을 받은 상태에서만 완성본을 제출할 수 있습니다.');
+      setIsSubmitting(false);
+      return;
+    }
 
-    const { data: current } = await supabase.from('contents').select('content_body').eq('id', formData.proposalId).single();
     let bodyData: any = {};
     try {
       if (current?.content_body) bodyData = JSON.parse(current.content_body);
@@ -837,7 +853,7 @@ export default function FinalSubmitForm({ initialId: embeddedId, onSuccess, onCa
               <button type="button" onClick={handleClose} disabled={isSubmitting} style={{ flex: 1, padding: '1rem', borderRadius: '8px', border: '2px solid var(--color-border)', backgroundColor: 'var(--color-panel)', color: 'var(--color-text-muted)', fontWeight: 800, fontSize: '1.1rem', cursor: 'pointer' }}>
                 목록으로
               </button>
-              {initialId && (isAdmin || isAuthor) && (
+              {initialId && (isAdmin || isAuthor) && (isAdmin || ['approved', 'final_submitted', 'final_revision'].includes(selectedProposal?.status)) && (
                 <button type="button" onClick={() => setIsReadOnly(false)} style={{ flex: 1, padding: '1rem', borderRadius: '8px', border: 'none', backgroundColor: '#1e3a8a', color: '#ffffff', fontWeight: 800, fontSize: '1.1rem', cursor: 'pointer' }}>
                   수정하기
                 </button>

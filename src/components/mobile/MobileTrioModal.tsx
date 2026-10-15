@@ -854,13 +854,21 @@ export default function MobileTrioModal({ isOpen, screen, onScreenChange, onClos
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 p-8 flex flex-col items-center gap-3 text-center">
                   <span className="text-4xl">📤</span>
                   <div className="text-sm font-bold text-slate-700 dark:text-slate-200">아직 완성본이 업로드되지 않았습니다</div>
-                  <div className="text-xs text-slate-400">완성본을 업로드하면 이 화면에서 바로 확인할 수 있어요</div>
-                  <button
-                    onClick={() => onEdit?.(item, 'final')}
-                    className="glass-cta glass-cta-strong px-5 py-2.5 rounded-xl text-sm font-extrabold text-[#002454] dark:text-white mt-1 active:scale-95 transition-transform cursor-pointer"
-                  >
-                    📤 완성본 업로드하기
-                  </button>
+                  {item.status === 'approved' || isAdmin ? (
+                    <>
+                      <div className="text-xs text-slate-400">완성본을 업로드하면 이 화면에서 바로 확인할 수 있어요</div>
+                      <button
+                        onClick={() => onEdit?.(item, 'final')}
+                        className="glass-cta glass-cta-strong px-5 py-2.5 rounded-xl text-sm font-extrabold text-[#002454] dark:text-white mt-1 active:scale-95 transition-transform cursor-pointer"
+                      >
+                        📤 완성본 업로드하기
+                      </button>
+                    </>
+                  ) : (
+                    <div className="text-xs text-amber-600 dark:text-amber-400 font-semibold bg-amber-50 dark:bg-amber-950/40 px-3.5 py-2.5 rounded-xl mt-1">
+                      🔒 기획안이 관리자 승인을 받은 후에 완성본을 등록할 수 있습니다.
+                    </div>
+                  )}
                 </div>
               ) : (
               <div className="space-y-4">

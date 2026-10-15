@@ -768,13 +768,20 @@ export default function ContentDetailModal({ contentId, onClose }: ContentDetail
 
                   {canEdit && (
                     <div className="pt-2">
-                      <a
-                        href={`/final-works/submit?id=${content.id}`}
-                        className="motion-btn w-full py-3.5 px-4 bg-[#1E3A8A] hover:bg-blue-900 text-white rounded-2xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 shadow-md transition-all active:scale-98"
-                      >
-                        <span>🎬</span>
-                        <span>완성본 등록 / 수정하기</span>
-                      </a>
+                      {['approved', 'final_submitted', 'final_revision', 'completed', 'uploaded'].includes(content.status) ? (
+                        <a
+                          href={`/final-works/submit?id=${content.id}`}
+                          className="motion-btn w-full py-3.5 px-4 bg-[#1E3A8A] hover:bg-blue-900 text-white rounded-2xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 shadow-md transition-all active:scale-98"
+                        >
+                          <span>🎬</span>
+                          <span>완성본 등록 / 수정하기</span>
+                        </a>
+                      ) : (
+                        <div className="w-full py-3 px-4 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 text-center">
+                          <span>🔒</span>
+                          <span>기획안이 관리자 승인을 받은 후에 완성본을 등록할 수 있습니다.</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
